@@ -1,0 +1,8 @@
+[
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-`": "workspace::ToggleBottomDock" // match vscode behavior
+    }
+  }
+]
