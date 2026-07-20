@@ -4,7 +4,7 @@ Best way to update these folders to match whatever changes made on local, would 
 
 ```bash
 # Assuming you have this repository in your root directory, otherwise change destination.
-cp -r ~/.config/hypr/ ~/.config/waybar/ ~/dotfiles 
+cp -r ~/.config/hypr/ ~/.config/waybar/ ~/dotfiles/hyprland-configs
 ```
 
 These folders should be a simple drag and drop into the `.config` folder.
