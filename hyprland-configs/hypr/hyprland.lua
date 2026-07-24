@@ -186,7 +186,7 @@ hl.config({
         kb_options   = "",
         kb_rules     = "",
 
-        follow_mouse = 1,
+        follow_mouse = 0,
 
         sensitivity  = 0, -- -1.0 - 1.0, 0 means no modification.
 
@@ -229,8 +229,8 @@ local suppressMaximizeRule = hl.window_rule({
 
 hl.window_rule({
     -- Fix some dragging issues with XWayland
-    name     = "fix-xwayland-drags",
-    match    = {
+    name            = "fix-xwayland-drags",
+    match           = {
         class      = "^$",
         title      = "^$",
         xwayland   = true,
@@ -239,7 +239,7 @@ hl.window_rule({
         pin        = false,
     },
 
-    no_focus = false,
+    no_focus        = false,
 })
 
 -- Layer rules also return a handle.
