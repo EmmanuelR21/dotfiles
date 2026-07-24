@@ -33,7 +33,7 @@
   "clock": {
     "interval": 60,
     "tooltip": true,
-    "format": " {0:%A, %B %d} |  {0:%H:%M %p} ",
+    "format": " {0:%A, %B %d} |  {0:%I:%M %p} ",
     "locale": "en_US.UTF-8",
     "tooltip-format": "<tt>{calendar}</tt>",
     "calendar": {
