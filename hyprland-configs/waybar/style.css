@@ -46,3 +46,10 @@ window#waybar {
 #taskbar button {
     padding: 0 2px;
 }
+
+#taskbar.empty {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+}
