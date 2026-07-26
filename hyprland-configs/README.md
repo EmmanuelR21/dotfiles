@@ -38,9 +38,46 @@ sudo pacman -S lib32-nvidia-utils
 
 ## Post NVIDIA
 
-install `ly` login manager, along with `brightnessctl`
+Make sure to install `kitty`/`ghostty`. Kitty is within the default hyprland config, if you choose to use another, just make sure to update the hyprland.lua config in `~/.config/` to use whatever terminal you use.
+
+```bash
+# Login manager and brightness control
+sudo pacman -S ly brightnessctl
+```
+
+Enable ly:
+
+```bash
+sudo systemctl enable ly@tty1.service
+```
+
+**You can now reboot.**
 
 # Configs
+
+## Prerequisites
+
+You will need
+
+- hyprlauncher (app launcher)
+- browser
+- git
+- openssh (for seting up Github ssh keys)
+
+You will also need:
+
+- hyprpolkitagent (authentication agent)
+- xdg-desktop-portal-hyprland (implements things such as opening file pickers, screen sharing etc.)
+- qt5-wayland (QT Support)
+- qt6-wayland (QT Support)
+- dolphin (file manager)
+- dunst (notification daemon)
+
+```bash
+sudo pacman -S hyprlauncher firefox git openssh hyprpolkitagent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland dolphin dunst
+```
+
+**OPTIONAL: Install Paru**
 
 ## Installation
 
