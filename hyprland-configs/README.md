@@ -40,9 +40,11 @@ sudo pacman -S lib32-nvidia-utils
 
 Make sure to install `kitty`/`ghostty`. Kitty is within the default hyprland config, if you choose to use another, just make sure to update the hyprland.lua config in `~/.config/` to use whatever terminal you use.
 
+You will also need `otf-font-awesome` for icons and symbols.
+
 ```bash
 # Login manager and brightness control
-sudo pacman -S ly brightnessctl
+sudo pacman -S ly brightnessctl otf-font-awesome
 ```
 
 Enable ly:
@@ -81,20 +83,18 @@ sudo pacman -S hyprlauncher firefox git openssh hyprpolkitagent xdg-desktop-port
 
 ## Installation
 
-The following command installs all necessary packages.
-
-```bash
-sudo pacman -S waybar hyprpaper hypridle hyprlock dunst wireplumber hyprsunset otf-font-awesome
-```
+You will also need:
 
 1. waybar: Status bar
 2. hyprpaper: Wallpaper utility
 3. hypridle: Idle management
 4. hyprlock: Lockscreen
-5. dunst: Notification daemon
-6. wireplumber: Audio session manager
-7. hyprsunset: Color temperature control
-8. otf-font-awesome: Icons and symbols
+5. wireplumber: Audio session manager
+6. hyprsunset: Color temperature control
+
+```bash
+sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset
+```
 
 ## Apply Configs
 
