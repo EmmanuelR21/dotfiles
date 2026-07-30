@@ -100,5 +100,19 @@ sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset
 
 ```bash
 # Assuming you have this repository in your home directory
+cd ~/dotfiles
+git pull
 cp -r ~/dotfiles/hyprland-configs/* ~/.config/
+```
+
+## Epilogue
+
+Pipewire will need a few more packages to work properly.
+
+- pipewire-audio: Meta packages
+- pipewire-alsa: ALSA support
+- pipewire-pulse: PulseAudio support
+
+```bash
+sudo pacman -S pipewire-audio pipewire-alsa pipewire-pulse
 ```
