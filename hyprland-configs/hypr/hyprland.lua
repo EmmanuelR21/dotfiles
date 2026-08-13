@@ -19,6 +19,7 @@ hl.env("HYPRCURSOR_SIZE", "24")
 -- NVIDIA --
 hl.env("LIBVA_DRIVER_NAME", "nvidia")
 hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+hl.env("XDG_SESSION_TYPE", "wayland")
 hl.window_rule({ match = { content = "game", fullscreen = true }, confine_pointer = true })
 
 -----------------------
@@ -48,7 +49,7 @@ hl.window_rule({ match = { content = "game", fullscreen = true }, confine_pointe
 hl.config({
     general = {
         gaps_in          = 4,
-        gaps_out         = 2,
+        gaps_out         = 8,
 
         border_size      = 2,
 
@@ -117,9 +118,9 @@ hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "easeOutQu
 hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "linear", style = "fade" })
 hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 1.79, bezier = "almostLinear" })
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.39, bezier = "almostLinear" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
-hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.21, bezier = "almostLinear", style = "fade" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almostLinear", style = "slide" })
+hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.5, bezier = "almostLinear", style = "slide" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.5, bezier = "almostLinear", style = "slide" })
 hl.animation({ leaf = "zoomFactor", enabled = true, speed = 7, bezier = "quick" })
 
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
@@ -229,8 +230,8 @@ local suppressMaximizeRule = hl.window_rule({
 
 hl.window_rule({
     -- Fix some dragging issues with XWayland
-    name            = "fix-xwayland-drags",
-    match           = {
+    name     = "fix-xwayland-drags",
+    match    = {
         class      = "^$",
         title      = "^$",
         xwayland   = true,
@@ -239,7 +240,7 @@ hl.window_rule({
         pin        = false,
     },
 
-    no_focus        = false,
+    no_focus = false,
 })
 
 -- Layer rules also return a handle.
