@@ -2,6 +2,9 @@ local mainMod  = "SUPER" -- Sets "Windows" key as main modifier
 local terminal = "ghostty"
 local menu     = "hyprlauncher"
 
+-- Grim + slurp + swappy for screenshot selection
+hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
+
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("killall -SIGUSR1 waybar"))
 
 -- Example binds, see https://wiki.hypr.land/Configuring/Basics/Binds/ for more
