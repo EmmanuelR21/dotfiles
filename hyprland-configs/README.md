@@ -36,6 +36,12 @@ sudo pacman -S nvidia-utils egl-wayland
 sudo pacman -S lib32-nvidia-utils
 ```
 
+You will likely want gamescope for some of your games.
+
+```bash
+sudo pacman -S gamescope
+```
+
 ## Post NVIDIA
 
 Make sure to install `kitty`/`ghostty`. Kitty is within the default hyprland config, if you choose to use another, just make sure to update the hyprland.lua config in `~/.config/` to use whatever terminal you use.
@@ -52,6 +58,14 @@ Enable ly:
 ```bash
 sudo systemctl enable ly@tty1.service
 ```
+
+For screenshot abilities:
+
+```bash
+sudo pacman -S grim slurp swappy
+```
+
+The configuration for this to work is already within the hyprland.lua config file.
 
 **You can now reboot.**
 
