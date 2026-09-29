@@ -12,6 +12,7 @@
     "custom/bluelight",
     "wireplumber#sink",
     "wireplumber#source",
+    "network",
     "custom/power",
   ],
   // Modules configuration
@@ -81,4 +82,14 @@
     "restart-interval": 1,
     "tooltip": false,
   },
+  "network": {
+	"interface": "wlan0",
+	"tooltip": false,
+	"format": "{ifname}",
+	"format-wifi": "{essid} ({signalStrength}%) ",
+	"format-ethernet": "{ifname} ",
+	"format-disconnected": "", //An empty format will hide the module.
+	"format-disconnected": "",
+	"max-length": 50
+  }
 }

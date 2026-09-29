@@ -22,7 +22,8 @@ window#waybar {
 #clock,
 #taskbar,
 #wireplumber,
-#custom-bluelight {
+#custom-bluelight,
+#network {
     padding: 2px 8px;
     border: 0px solid white;
     background-color: #2f2f2f;
