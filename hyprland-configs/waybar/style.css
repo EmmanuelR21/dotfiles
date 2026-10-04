@@ -23,6 +23,7 @@ window#waybar {
 #taskbar,
 #wireplumber,
 #custom-bluelight,
+#battery,
 #network {
     padding: 2px 8px;
     border: 0px solid white;
