@@ -1,21 +1,21 @@
 /*
 Orange:
-    background-color: rgba(255, 128, 0, 0.8);
+background-color: rgba(255, 128, 0, 0.8);
 Red&DarkBlue:
-    background-color: rgba(255, 67, 101, 0.8);
-    color: rgb(13, 44, 84);
-*/
+background-color: rgba(255, 67, 101, 0.8);
+color: rgb(13, 44, 84);
+ */
 
 * {
-    color: white;
-    font-family: "Font Awesome 6 Free";
-    font-weight: bold;
-    font-size: 14px;
+	color: white;
+	font-family: "Font Awesome 6 Free";
+	font-weight: bold;
+	font-size: 14px;
 }
 
 window#waybar {
-    background-color: rgba(50, 20, 40, 0);
-    border-radius: 20px;
+	background-color: rgba(50, 20, 40, 0);
+	border-radius: 20px;
 }
 
 #workspaces,
@@ -24,35 +24,40 @@ window#waybar {
 #wireplumber,
 #custom-bluelight,
 #battery,
-#network {
-    padding: 2px 8px;
-    border: 0px solid white;
-    background-color: #2f2f2f;
-    /*background-color: rgba(255, 67, 101, 0.8);*/
-    border-radius: 50px;
+#network,
+#custom-power {
+	padding: 2px 8px;
+	border: 0px solid white;
+	background-color: #2f2f2f;
+	/*background-color: rgba(255, 67, 101, 0.8);*/
+	border-radius: 5px;
+}
+
+menu {
+	background-color: #2f2f2f;
 }
 
 #custom-bluelight {
-    padding-top: 4px;
+	padding-top: 4px;
 }
 /* rgba(FF8000EE) */
 #clock {
-    padding: 0 10px;
+	padding: 0 10px;
 }
 
 #workspaces button {
-    min-width: 2px;
-    border-radius: 10px;
-    padding: 0 8px;
+	min-width: 2px;
+	border-radius: 10px;
+	padding: 0 8px;
 }
 
 #taskbar button {
-    padding: 0 2px;
+	padding: 0 2px;
 }
 
 #taskbar.empty {
-    padding: 0;
-    margin: 0;
-    background: transparent;
-    border: none;
+	padding: 0;
+	margin: 0;
+	background: transparent;
+	border: none;
 }
