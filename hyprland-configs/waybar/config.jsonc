@@ -68,14 +68,13 @@
     "menu-file": "$HOME/.config/waybar/power_menu.xml", // Menu file in resources folder
     "menu-actions": {
       "shutdown": "hyprshutdown -p 'systemctl poweroff'",
-      "reboot": "reboot",
+      "reboot": "hyprshutdown -p 'systemctl reboot'",
       "suspend": "systemctl suspend",
       "hibernate": "systemctl hibernate",
     },
   },
   "custom/bluelight": {
     "format": "☀️",
-    "locale": "en_US.UTF-8",
     "locale": "en_US.UTF-8",
     "exec": "~/.config/waybar/scripts/hyprsunset-menu.sh status",
     "on-click": "~/.config/waybar/scripts/hyprsunset-menu.sh menu",
@@ -87,7 +86,7 @@
 	"tooltip": false,
 	"format": "{ifname}",
 	"format-wifi": "{essid} ({signalStrength}%) ",
-	"format-ethernet": "{ifname} ",
+	"format-ethernet": "{ifname} ",
 	"format-disconnected": "", //An empty format will hide the module.
 	"format-disconnected": "",
 	"max-length": 50
