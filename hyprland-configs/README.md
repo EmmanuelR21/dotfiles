@@ -76,7 +76,7 @@ The configuration for this to work is already within the hyprland.lua config fil
 You will need
 
 - hyprlauncher (app launcher)
-- browser
+- browser (default: librewolf)
 - git
 - openssh (for seting up Github ssh keys)
 
@@ -90,7 +90,7 @@ You will also need:
 - dunst (notification daemon)
 
 ```bash
-sudo pacman -S hyprlauncher firefox git openssh hyprpolkitagent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland dolphin dunst
+sudo pacman -S hyprlauncher librewolf git openssh hyprpolkitagent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland dolphin dunst
 ```
 
 **OPTIONAL: Install Paru**
@@ -105,9 +105,10 @@ You will also need:
 4. hyprlock: Lockscreen
 5. wireplumber: Audio session manager
 6. hyprsunset: Color temperature control
+7. hyprshutdown: Graceful shutdown utility
 
 ```bash
-sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset
+sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown
 ```
 
 ## Apply Configs
