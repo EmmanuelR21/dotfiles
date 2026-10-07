@@ -104,11 +104,17 @@ You will also need:
 3. hypridle: Idle management
 4. hyprlock: Lockscreen
 5. wireplumber: Audio session manager
+    - Pipewire will need a few more packages to work properly.
+
+    1. pipewire-audio: Meta packages
+    2. pipewire-alsa: ALSA support
+    3. pipewire-pulse: PulseAudio support
 6. hyprsunset: Color temperature control
 7. hyprshutdown: Graceful shutdown utility
+8. rofi
 
 ```bash
-sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown
+sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown rofi pipewire-audio pipewire-alsa pipewire-pulse
 ```
 
 ## Apply Configs
@@ -122,12 +128,6 @@ cp -r ~/dotfiles/hyprland-configs/* ~/.config/
 
 ## Epilogue
 
-Pipewire will need a few more packages to work properly.
+If you are using gamescope, this is the command to include within the steam properties tab, wit the first values tweaked to the Desktop Monitor resolution & refresh rate:
 
-- pipewire-audio: Meta packages
-- pipewire-alsa: ALSA support
-- pipewire-pulse: PulseAudio support
-
-```bash
-sudo pacman -S pipewire-audio pipewire-alsa pipewire-pulse
-```
+`gamescope -W 1920 -H 1080 -r 180 --adaptive-sync --force-grab-cursor -f -- %command%`
