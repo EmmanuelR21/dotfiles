@@ -12,5 +12,6 @@ hl.on("hyprland.start", function ()
      hl.exec_cmd("dunst")
      hl.exec_cmd("waybar & hyprpaper")
      hl.exec_cmd("hypridle")
+     hl.exec_cmd("hyprlauncher -d")
  end)
 
