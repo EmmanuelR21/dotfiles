@@ -9,7 +9,7 @@
   "modules-left": ["hyprland/workspaces", "wlr/taskbar"],
   "modules-center": ["clock"],
   "modules-right": [
-    "custom/bluelight",
+    "custom/hyprsunset",
     "wireplumber#sink",
     "wireplumber#source",
     "network",
@@ -72,19 +72,23 @@
       "shutdown": "hyprshutdown -p 'systemctl poweroff'",
       "reboot": "hyprshutdown -p 'systemctl reboot'",
       "suspend": "systemctl suspend",
-      "hibernate": "systemctl hibernate",
     },
   },
-  "custom/bluelight": {
+  "custom/hyprsunset": {
     "format": "☀️",
-    "locale": "en_US.UTF-8",
-    "exec": "~/.config/waybar/scripts/hyprsunset-menu.sh status",
-    "on-click": "~/.config/waybar/scripts/hyprsunset-menu.sh menu",
-    "restart-interval": 1,
-    "tooltip": false,
+    "menu": "on-click",
+    "menu-file": "~/.config/waybar/hyprsunset_menu.xml",
+    "menu-actions": {
+        "temp_5000": "pkill hyprsunset; hyprsunset -t 5000 &",
+        "temp_4000": "pkill hyprsunset; hyprsunset -t 4000 &",
+        "temp_3000": "pkill hyprsunset; hyprsunset -t 3000 &",
+        "turn_off": "pkill hyprsunset"
+    },
+    "tooltip": true,
+    "tooltip-format": "Hyprsunset Menu"
   },
   "network": {
-	"interface": "wlan0",
+	"interface": "enp7s0",
 	"tooltip": false,
 	"format": "{ifname}",
 	"format-wifi": "{essid} ({signalStrength}%) ",

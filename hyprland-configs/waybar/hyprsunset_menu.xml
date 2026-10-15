@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkMenu" id="menu">
+    <child>
+      <object class="GtkMenuItem" id="temp_5000">
+        <property name="label">5000K (Warm)</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="temp_4000">
+        <property name="label">4000K (Warmer)</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="temp_3000">
+        <property name="label">3000K (Night)</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="turn_off">
+        <property name="label">Turn Off</property>
+      </object>
+    </child>
+  </object>
+</interface>
