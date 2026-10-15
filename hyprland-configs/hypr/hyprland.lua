@@ -25,13 +25,13 @@ hl.env("XDG_SESSION_TYPE", "wayland")
 -- Refer to https://wiki.hypr.land/Configuring/Basics/Variables/
 hl.config({
     general = {
-        gaps_in          = 4,
+        gaps_in          = 3,
         gaps_out         = 6,
 
         border_size      = 2,
 
         col              = {
-            active_border   = { colors = { "rgba(ffffffff)" }, angle = 45 },
+            active_border   = { colors = { "rgba(999999ff)" }, angle = 45 },
             inactive_border = "rgba(595959AA)",
         },
 
@@ -205,14 +205,6 @@ hl.window_rule({
 
     no_focus = false,
 })
-
--- Layer rules also return a handle.
--- local overlayLayerRule = hl.layer_rule({
---     name  = "no-anim-overlay",
---     match = { namespace = "^my-overlay$" },
---     no_anim = true,
--- })
--- overlayLayerRule:set_enabled(false)
 
 -- Hyprland-run windowrule
 hl.window_rule({
