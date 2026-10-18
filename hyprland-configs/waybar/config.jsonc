@@ -13,6 +13,7 @@
     "wireplumber#sink",
     "wireplumber#source",
     "network",
+    "battery",
     "custom/power",
   ],
   // Modules configuration
@@ -30,6 +31,16 @@
     "on-click-middle": "close",
     "sort-by-app-id": true,
     "squash-list": ["*"],
+  },
+  // Hidden automatically on machines without a battery
+  "battery": {
+    "bat": "BAT0",
+    "interval": 60,
+    "format": "{capacity}% {icon}",
+    "format-icons": {
+      "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+      "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
+    },
   },
   "clock": {
     "interval": 60,
