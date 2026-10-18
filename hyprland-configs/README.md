@@ -204,17 +204,28 @@ To change a device's monitor, edit its block in `hypr/monitors.lua` (`hyprctl mo
 
 ## Syncing Changes Between Devices
 
-`cp` never deletes files. If you delete or rename a config file, delete it on the other machine and in the repo too.
+Use the sync script:
 
 ```bash
-# After editing on one machine
-cp -r ~/.config/hypr ~/.config/waybar ~/dotfiles/hyprland-configs/
-cd ~/dotfiles && git add -A && git commit -m "..." && git push
-
-# On the other machine
-cd ~/dotfiles && git pull
-cp -r ~/dotfiles/hyprland-configs/hypr ~/dotfiles/hyprland-configs/waybar ~/.config/
+~/dotfiles/scripts/sync-configs.sh
 ```
+
+It asks which direction to copy:
+
+1. **This device -> dotfiles**: after editing configs on a machine. Then commit and push.
+2. **Dotfiles -> this device**: on the other machine. Offers to `git pull` first, and to reload Hyprland and waybar after.
+
+How it works:
+
+- Shows a preview (`+` added, `-` deleted, `~` changed) and asks before changing anything.
+- Mirrors `hypr/` and `waybar/` exactly, so deleted or renamed files are removed on the other side too.
+- Backs up whatever it replaces to `~/.local/state/dotfiles-sync/backups/` (keeps the last 10).
+- Warns before you lose work:
+    - **Option 1** when the repo has changes this device hasn't applied yet (e.g. you pulled from the other machine). Copying would undo them, so run option 2 first.
+    - **Option 2** when this device has edits that were never copied to the repo.
+- Don't run it with `sudo`.
+
+Because it mirrors, any config file that should exist on both machines must exist on both (e.g. `batteryOpts.lua` stays on the PC even though only the laptop loads it). Check the `-` lines in the preview before confirming.
 
 ## Epilogue
 
