@@ -3,6 +3,7 @@
 -- You can (and should!!) split this configuration into multiple files
 -- Create your files separately and then require them like this:
 -- require("myColors")
+local host = require("host")
 require("monitors")
 require("autostart")
 require("binds")
@@ -13,9 +14,12 @@ require("binds")
 
 hl.env("HYPRCURSOR_SIZE", "24")
 
--- NVIDIA --
-hl.env("LIBVA_DRIVER_NAME", "nvidia")
-hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+-- NVIDIA (only applied when the NVIDIA driver is loaded) --
+if host.has_nvidia then
+    hl.env("LIBVA_DRIVER_NAME", "nvidia")
+    hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+end
+
 hl.env("XDG_SESSION_TYPE", "wayland")
 
 -----------------------
@@ -206,3 +210,12 @@ hl.window_rule({
     move  = "20 monitor_h-120",
     float = true,
 })
+
+------------------------
+---- BATTERY SAVING ----
+------------------------
+
+-- Loaded last so its settings override the ones above
+if host.has_battery then
+    require("batteryOpts")
+end
