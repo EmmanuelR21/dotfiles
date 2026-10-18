@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <object class="GtkMenu" id="menu">
+    <property name="name">hyprsunset-menu</property>
     <child>
       <object class="GtkMenuItem" id="temp_5000">
         <property name="label">5000K (Warm)</property>
@@ -15,6 +16,9 @@
       <object class="GtkMenuItem" id="temp_3000">
         <property name="label">3000K (Night)</property>
       </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="delimiter1"/>
     </child>
     <child>
       <object class="GtkMenuItem" id="turn_off">

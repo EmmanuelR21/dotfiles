@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <object class="GtkMenu" id="menu">
+    <property name="name">power-menu</property>
     <child>
       <object class="GtkMenuItem" id="suspend">
         <property name="label">Suspend</property>

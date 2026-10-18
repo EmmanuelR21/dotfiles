@@ -10,8 +10,7 @@
   "modules-center": ["clock"],
   "modules-right": [
     "custom/hyprsunset",
-    "wireplumber#sink",
-    "wireplumber#source",
+    "group/audio",
     "network",
     "battery",
     "custom/power",
@@ -45,7 +44,7 @@
   "clock": {
     "interval": 60,
     "tooltip": true,
-    "format": " {0:%A, %B %d} |  {0:%I:%M %p} ",
+    "format": "<span color='#777777'></span> <span color='#dedede'>{0:%A, %B %d}</span> <span color='#444444'>|</span> <span color='#777777'></span> <span color='#ffc547' size='larger'>{0:%I:%M %p}</span> ",
     "locale": "en_US.UTF-8",
     "tooltip-format": "<tt>{calendar}</tt>",
     "calendar": {
@@ -58,17 +57,21 @@
       },
     },
   },
+  "group/audio": {
+    "orientation": "inherit",
+    "modules": ["wireplumber#sink", "wireplumber#source"],
+  },
   "wireplumber#sink": {
-    "format": "{volume}% {icon}",
-    "format-muted": "",
-    "format-icons": ["", "", ""],
+    "format": "<span alpha='90%'>{volume}%</span> {icon}",
+    "format-muted": "<span alpha='70%'>{volume}%</span> 󰖁",
+    "format-icons": ["󰕿", "󰖀", "󰕾"],
     "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
     "scroll-step": 5,
   },
   "wireplumber#source": {
     "node-type": "Audio/Source",
-    "format": "{volume}% ",
-    "format-muted": "",
+    "format": "<span alpha='90%'>{volume}%</span> 󰍬",
+    "format-muted": "<span alpha='70%'>{volume}%</span> 󰍭",
     "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
     "scroll-step": 5,
   },
@@ -84,7 +87,7 @@
     },
   },
   "custom/hyprsunset": {
-    "format": "☀️",
+    "format": "󰖛",
     "menu": "on-click",
     "menu-file": "~/.config/waybar/hyprsunset_menu.xml",
     "menu-actions": {
@@ -98,12 +101,16 @@
   },
   "network": {
 	"interface": "enp7s0",
-	"tooltip": false,
+	"interval": 3,
 	"format": "{ifname}",
-	"format-wifi": "{essid} ({signalStrength}%) ",
-	"format-ethernet": "{ifname} ",
+	"format-wifi": "󰖩",
+	"format-ethernet": "󱘖",
 	"format-disconnected": "", //An empty format will hide the module.
-	"format-disconnected": "",
-	"max-length": 50
+	// Click to expand into live speeds, click again to collapse
+	"format-alt": "󱘖  <span alpha='80%'>↓</span> {bandwidthDownBytes}  <span alpha='80%'>↑</span> {bandwidthUpBytes}",
+	"max-length": 50,
+	"tooltip": true,
+	"tooltip-format-ethernet": "{ifname}  {ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
+	"tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}"
   }
 }

@@ -27,14 +27,60 @@ window#waybar {
 #network,
 #custom-power {
 	padding: 2px 8px;
-	border: 0px solid white;
-	background-color: #2f2f2f;
+	/* Solid dark box (stands out on light wallpapers) + accent rim and top
+	   highlight (stand out on dark wallpapers). Rim colors set per module below. */
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+	background-color: #1e1e1e;
 	/*background-color: rgba(255, 67, 101, 0.8);*/
 	border-radius: 5px;
 }
 
+/* Popup menus (hyprsunset + power) */
 menu {
-	background-color: #2f2f2f;
+	background-color: #1e1e1e;
+	border: 1px solid #3c3c3c;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+	border-radius: 5px;
+	padding: 4px;
+}
+
+menuitem {
+	padding: 6px 14px;
+	border-radius: 3px;
+	background-image: none;
+	box-shadow: none;
+	transition: background-color 150ms ease-out;
+}
+
+menuitem label {
+	color: #d8d8d8;
+	font-weight: normal;
+	transition: color 150ms ease-out;
+}
+
+menu separator {
+	background-color: #3c3c3c;
+	min-height: 1px;
+	margin: 4px 6px;
+}
+
+/* Menus share a neutral dark-grey border; the accent shows on hover */
+#hyprsunset-menu menuitem:hover {
+	background-color: rgba(255, 197, 71, 0.12);
+}
+
+#hyprsunset-menu menuitem:hover label {
+	color: #ffc547;
+}
+
+
+#power-menu menuitem:hover {
+	background-color: rgba(255, 122, 122, 0.12);
+}
+
+#power-menu menuitem:hover label {
+	color: #ff7a7a;
 }
 
 #custom-bluelight {
@@ -45,7 +91,98 @@ menu {
 	padding: 0 10px;
 }
 
+/* Per-module accents: solid dark boxes, saturated text color carries identity */
+/* Clock ("8e" style): mono box, grey icons, light date, amber time.
+   Text colors live in the clock "format" markup in config.jsonc. */
+#clock {
+	color: #dedede;
+	background-color: #1e1e1e;
+	border-color: rgba(222, 222, 222, 0.35);
+}
+
+#workspaces,
+#taskbar {
+	border-color: rgba(255, 197, 71, 0.4);
+}
+
+/* Hyprsunset: glowing amber icon tile (same tile style as network) */
+#custom-hyprsunset {
+	color: #ffc547;
+	border-color: rgba(255, 197, 71, 0.4);
+	padding: 2px 10px;
+	transition: background-color 250ms ease-out, color 250ms ease-out;
+}
+
+#custom-hyprsunset:hover {
+	color: #ffdb8a;
+	background-color: #2a2a2a;
+}
+
+/* Speaker + mic share one box (group/audio in config) */
+#audio {
+	background-color: #1e1e1e;
+	border-radius: 5px;
+	padding: 0 2px;
+	/* 1px outline drawn as a shadow so it doesn't change the box size */
+	box-shadow: inset 0 0 0 1px rgba(200, 210, 228, 0.6),
+		inset 0 2px 0 rgba(255, 255, 255, 0.07);
+}
+
+#audio #wireplumber {
+	color: #c8d2e4;
+	background-color: rgba(255, 255, 255, 0.035);
+	border: none;
+	padding: 2px 8px;
+	border-radius: 3px;
+	transition: color 400ms ease-in-out, background-color 400ms ease-in-out;
+}
+
+/* Thin divider between speaker and mic */
+#audio #wireplumber.source {
+	border-left: 1px solid rgba(200, 210, 228, 0.6);
+}
+
+#audio #wireplumber:hover {
+	color: #e4eaf4;
+}
+
+/* Muted: faded text on a dark, diagonally hatched "switched off" panel */
+#audio #wireplumber.muted {
+	color: #9499a2;
+	background-color: rgba(0, 0, 0, 0.35);
+	background-image: repeating-linear-gradient(-45deg,
+		rgba(200, 210, 228, 0.10) 0px, rgba(200, 210, 228, 0.10) 2px,
+		transparent 2px, transparent 6px);
+}
+
+/* Network: compact icon tile; click expands into live speeds
+   Previous aqua version (to go back, swap these into the rules below):
+     color: #6ed6cc;  background-color: rgba(110, 214, 204, 0.12);
+     hover -> color: #9be8df;  background-color: rgba(110, 214, 204, 0.2);
+*/
+#network {
+	color: #ffa45e;
+	border-color: rgba(255, 164, 94, 0.4);
+	padding: 2px 10px;
+	transition: background-color 250ms ease-out, color 250ms ease-out;
+}
+
+#network:hover {
+	background-color: #2a2a2a;
+	color: #ffc08f;
+}
+
+#custom-power {
+	color: #ff7a7a;
+	border-color: rgba(255, 122, 122, 0.4);
+}
+
 /* Strip the GTK theme's button styling (gradients/borders/shadows on hover) */
+/* Accent for the workspace/taskbar indicators. Matches the clock's amber time
+   (set in config.jsonc); change this line to recolor both modules
+   (white #ffffff was the original, coral #ff8a70 the previous). */
+@define-color nav-accent #ffc547;
+
 #workspaces button,
 #workspaces button:hover,
 #taskbar button,
@@ -60,7 +197,7 @@ menu {
    makes it grow out from the center under the number */
 #workspaces button {
 	background-color: transparent;
-	background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9));
+	background-image: linear-gradient(@nav-accent, @nav-accent);
 	background-repeat: no-repeat;
 	background-position: center bottom;
 	background-size: 0% 2px;
@@ -75,13 +212,14 @@ menu {
 #workspaces button:hover {
 	opacity: 0.75;
 	background-color: transparent;
-	background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9));
+	background-image: linear-gradient(alpha(@nav-accent, 0.7), alpha(@nav-accent, 0.7));
 	background-size: 30% 2px;
 }
 
 /* Active workspace: full brightness, bar grows out to most of the width */
 #workspaces button.active {
 	opacity: 1;
+	background-image: linear-gradient(@nav-accent, @nav-accent);
 	background-size: 65% 2px;
 }
 
@@ -92,7 +230,7 @@ menu {
 }
 
 @keyframes urgent-blink {
-	from { background-color: #2f2f2f; }
+	from { background-color: #1e1e1e; }
 	to   { background-color: rgba(255, 67, 101, 0.8); }
 }
 
@@ -107,14 +245,14 @@ menu {
 
 #taskbar button:hover {
 	opacity: 0.85;
-	background-color: rgba(255, 255, 255, 0.05);
+	background-color: alpha(@nav-accent, 0.06);
 }
 
 /* Focused window: full brightness + thin underline */
 #taskbar button.active {
 	opacity: 1;
 	background-color: transparent;
-	box-shadow: inset 0 -2px 0 0 rgba(255, 255, 255, 0.9);
+	box-shadow: inset 0 -2px 0 0 alpha(@nav-accent, 0.9);
 }
 
 #taskbar button.minimized {
@@ -126,4 +264,5 @@ menu {
 	margin: 0;
 	background: transparent;
 	border: none;
+	box-shadow: none;
 }
