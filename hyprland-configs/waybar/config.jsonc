@@ -28,10 +28,8 @@
     "tooltip-format": "{title}",
     "on-click": "activate",
     "on-click-middle": "close",
-    "sort-by-app-id": true
-    //"squash-list": [
-    //        "*"
-    //],
+    "sort-by-app-id": true,
+    "squash-list": ["*"],
   },
   "clock": {
     "interval": 60,

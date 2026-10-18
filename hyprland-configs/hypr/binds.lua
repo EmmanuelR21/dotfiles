@@ -74,3 +74,13 @@ hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
+
+-- Window groups (tabbed stacks)
+hl.bind(mainMod .. " + G", hl.dsp.group.toggle())               -- make/dissolve a group
+hl.bind(mainMod .. " + TAB", hl.dsp.group.next())               -- next tab in group
+hl.bind(mainMod .. " + SHIFT + TAB", hl.dsp.group.prev())       -- previous tab in group
+hl.bind(mainMod .. " + CTRL + H", hl.dsp.window.move({ into_group = "l" }))
+hl.bind(mainMod .. " + CTRL + J", hl.dsp.window.move({ into_group = "d" }))
+hl.bind(mainMod .. " + CTRL + K", hl.dsp.window.move({ into_group = "u" }))
+hl.bind(mainMod .. " + CTRL + L", hl.dsp.window.move({ into_group = "r" }))
+hl.bind(mainMod .. " + CTRL + O", hl.dsp.window.move({ out_of_group = true }))

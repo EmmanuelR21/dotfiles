@@ -8,7 +8,7 @@ color: rgb(13, 44, 84);
 
 * {
 	color: white;
-	font-family: "Font Awesome 6 Free";
+	font-family: "FreeSans", "Font Awesome 7 Free", "Symbols Nerd Font";
 	font-weight: bold;
 	font-size: 14px;
 }
@@ -45,14 +45,64 @@ menu {
 	padding: 0 10px;
 }
 
+/* Strip the GTK theme's button styling (gradients/borders/shadows on hover) */
+#workspaces button,
+#workspaces button:hover,
+#taskbar button,
+#taskbar button:hover {
+	background-image: none;
+	border: none;
+	box-shadow: none;
+	text-shadow: none;
+}
+
 #workspaces button {
+	background-color: transparent;
 	min-width: 2px;
-	border-radius: 10px;
+	border-radius: 3px;
 	padding: 0 8px;
+	transition: background-color 200ms ease-in-out;
+}
+
+#workspaces button:hover {
+	background-color: #3d3d3d;
+}
+
+#workspaces button.active {
+	background-color: #4a4a4a;
+}
+
+/* A window on another workspace wants attention */
+#workspaces button.urgent {
+	animation: urgent-blink 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes urgent-blink {
+	from { background-color: #2f2f2f; }
+	to   { background-color: rgba(255, 67, 101, 0.8); }
 }
 
 #taskbar button {
+	background-color: transparent;
 	padding: 0 2px;
+	border-radius: 3px;
+	opacity: 0.6;
+	transition: opacity 200ms ease-in-out, background-color 200ms ease-in-out;
+}
+
+#taskbar button:hover {
+	opacity: 1;
+	background-color: #3d3d3d;
+}
+
+/* Focused window */
+#taskbar button.active {
+	opacity: 1;
+	background-color: #4a4a4a;
+}
+
+#taskbar button.minimized {
+	opacity: 0.35;
 }
 
 #taskbar.empty {

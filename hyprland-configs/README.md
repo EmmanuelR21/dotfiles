@@ -46,11 +46,15 @@ sudo pacman -S gamescope
 
 Make sure to install `kitty`/`ghostty`. Kitty is within the default hyprland config, if you choose to use another, just make sure to update the hyprland.lua config in `~/.config/` to use whatever terminal you use.
 
-You will also need `otf-font-awesome` for icons and symbols.
+You will also need these fonts for waybar's text, icons and symbols:
+
+- `gnu-free-fonts` (FreeSans)
+- `otf-font-awesome`
+- `ttf-nerd-fonts-symbols`
 
 ```bash
-# Login manager and brightness control
-sudo pacman -S ly brightnessctl otf-font-awesome
+# Login manager, brightness control and fonts
+sudo pacman -S ly brightnessctl gnu-free-fonts otf-font-awesome ttf-nerd-fonts-symbols
 ```
 
 Enable ly:
@@ -111,10 +115,9 @@ You will also need:
     3. pipewire-pulse: PulseAudio support
 6. hyprsunset: Color temperature control
 7. hyprshutdown: Graceful shutdown utility
-8. rofi
 
 ```bash
-sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown rofi pipewire-audio pipewire-alsa pipewire-pulse
+sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown pipewire-audio pipewire-alsa pipewire-pulse
 ```
 
 ## Apply Configs
@@ -124,6 +127,42 @@ sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshu
 cd ~/dotfiles
 git pull
 cp -r ~/dotfiles/hyprland-configs/* ~/.config/
+```
+
+## Wallpapers
+
+`hyprpaper.conf` and `hyprlock.conf` don't point at a specific image. They point at two fixed names:
+
+- `~/Pictures/wallpapers/selected/background.png` (desktop)
+- `~/Pictures/wallpapers/selected/lockscreen.png` (lock screen)
+
+These are **symlinks** (shortcuts) to real images in `~/Pictures/wallpapers/`. Each machine sets its own links, so the configs stay identical on every device while the wallpapers can differ.
+
+### First-time setup
+
+```bash
+mkdir -p ~/Pictures/wallpapers/selected
+ln -sf ../dark_white_mountains.png ~/Pictures/wallpapers/selected/background.png
+ln -sf ../night_gas_station.png ~/Pictures/wallpapers/selected/lockscreen.png
+```
+
+### Changing wallpapers
+
+```bash
+# Desktop (restart hyprpaper to apply)
+ln -sf ../oil_painting.png ~/Pictures/wallpapers/selected/background.png
+pkill hyprpaper; hyprpaper & disown
+
+# Lock screen (applies next time you lock)
+ln -sf ../night_gas_station.png ~/Pictures/wallpapers/selected/lockscreen.png
+```
+
+`../` means the image is one folder up, in `~/Pictures/wallpapers/`.
+
+To see which images are currently selected:
+
+```bash
+ls -l ~/Pictures/wallpapers/selected/
 ```
 
 ## Epilogue
