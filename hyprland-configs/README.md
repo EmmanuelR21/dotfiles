@@ -126,7 +126,7 @@ sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshu
 # Assuming you have this repository in your home directory
 cd ~/dotfiles
 git pull
-cp -r ~/dotfiles/hyprland-configs/* ~/.config/
+cp -r ~/dotfiles/hyprland-configs/hypr ~/dotfiles/hyprland-configs/waybar ~/.config/
 ```
 
 ## Wallpapers
