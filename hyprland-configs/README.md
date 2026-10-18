@@ -165,6 +165,57 @@ To see which images are currently selected:
 ls -l ~/Pictures/wallpapers/selected/
 ```
 
+## Per-Device Settings
+
+The same configs work on every machine. Device differences are detected automatically from the hardware, so nothing needs changing per device.
+
+`hypr/host.lua` detects:
+
+| Value | Meaning | Detected from |
+| --- | --- | --- |
+| `host.profile` | `"desktop"` or `"laptop"` | `/sys/class/dmi/id/chassis_type` or a battery |
+| `host.has_battery` | Has a battery | `/sys/class/power_supply/BAT0` (or `BAT1`) |
+| `host.has_nvidia` | NVIDIA driver loaded | `/proc/driver/nvidia/version` |
+
+What uses it:
+
+- **`monitors.lua`**: desktop gets `DP-1` @ 180Hz, laptop gets `eDP-1` @ scale 1.07. Any other monitor falls back to `preferred` / `auto`.
+- **`hyprland.lua`**: NVIDIA env vars only apply if `has_nvidia`. `batteryOpts.lua` (blur off) only loads if `has_battery`, at the end of the file so it overrides earlier settings.
+- **Waybar**: the `battery` module is in the shared config. Waybar hides it automatically on machines without a battery.
+
+To check what a machine is detected as:
+
+```bash
+cat /sys/class/dmi/id/chassis_type    # 3 = desktop, 9/10 = laptop
+ls /sys/class/power_supply/           # BAT0 = has battery
+```
+
+To change a device's monitor, edit its block in `hypr/monitors.lua` (`hyprctl monitors all` lists monitor names and modes).
+
+## New Device Checklist
+
+1. Install packages (see above) and clone this repo to `~/dotfiles`.
+2. Create the wallpaper links (see [Wallpapers](#wallpapers)).
+3. Copy configs (see [Apply Configs](#apply-configs)).
+4. Log out and back in, then verify:
+    - `hyprctl monitors` shows the right monitor and scale
+    - `hyprctl configerrors` prints nothing
+    - `echo $LIBVA_DRIVER_NAME` prints `nvidia` on NVIDIA machines, nothing otherwise
+
+## Syncing Changes Between Devices
+
+`cp` never deletes files. If you delete or rename a config file, delete it on the other machine and in the repo too.
+
+```bash
+# After editing on one machine
+cp -r ~/.config/hypr ~/.config/waybar ~/dotfiles/hyprland-configs/
+cd ~/dotfiles && git add -A && git commit -m "..." && git push
+
+# On the other machine
+cd ~/dotfiles && git pull
+cp -r ~/dotfiles/hyprland-configs/hypr ~/dotfiles/hyprland-configs/waybar ~/.config/
+```
+
 ## Epilogue
 
 If you are using gamescope, this is the command to include within the steam properties tab, wit the first values tweaked to the Desktop Monitor resolution & refresh rate:
