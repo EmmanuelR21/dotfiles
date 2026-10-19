@@ -35,7 +35,7 @@
   "battery": {
     "bat": "BAT0",
     "interval": 60,
-    "format": "{capacity}% {icon}",
+    "format": "<span color='#f0f0f0'>{capacity}%</span> {icon}",
     "format-icons": {
       "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
       "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
@@ -44,7 +44,7 @@
   "clock": {
     "interval": 60,
     "tooltip": true,
-    "format": "<span color='#777777'></span> <span color='#dedede'>{0:%A, %B %d}</span> <span color='#444444'>|</span> <span color='#777777'></span> <span color='#ffc547' size='larger'>{0:%I:%M %p}</span> ",
+    "format": "<span color='#d6dde9'></span> <span color='#ffffff'>{0:%A, %B %d}</span> <span color='#555555'>|</span> <span color='#d6dde9'></span> <span color='#ffffff' size='larger'>{0:%I:%M %p}</span> ",
     "locale": "en_US.UTF-8",
     "tooltip-format": "<tt>{calendar}</tt>",
     "calendar": {
@@ -62,16 +62,16 @@
     "modules": ["wireplumber#sink", "wireplumber#source"],
   },
   "wireplumber#sink": {
-    "format": "<span alpha='90%'>{volume}%</span> {icon}",
-    "format-muted": "<span alpha='70%'>{volume}%</span> 󰖁",
+    "format": "<span color='#d6dde9'>{volume}%</span> {icon}",
+    "format-muted": "<span color='#7a7a7a'>{volume}%</span> 󰖁",
     "format-icons": ["󰕿", "󰖀", "󰕾"],
     "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
     "scroll-step": 5,
   },
   "wireplumber#source": {
     "node-type": "Audio/Source",
-    "format": "<span alpha='90%'>{volume}%</span> 󰍬",
-    "format-muted": "<span alpha='70%'>{volume}%</span> 󰍭",
+    "format": "<span color='#d6dde9'>{volume}%</span> 󰍬",
+    "format-muted": "<span color='#7a7a7a'>{volume}%</span> 󰍭",
     "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
     "scroll-step": 5,
   },
@@ -107,7 +107,7 @@
 	"format-ethernet": "󱘖",
 	"format-disconnected": "", //An empty format will hide the module.
 	// Click to expand into live speeds, click again to collapse
-	"format-alt": "󱘖  <span alpha='80%'>↓</span> {bandwidthDownBytes}  <span alpha='80%'>↑</span> {bandwidthUpBytes}",
+	"format-alt": "󱘖  <span color='#e6e6e6'>↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}</span>",
 	"max-length": 50,
 	"tooltip": true,
 	"tooltip-format-ethernet": "{ifname}  {ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
