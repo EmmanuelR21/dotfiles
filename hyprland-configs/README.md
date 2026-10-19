@@ -116,7 +116,7 @@ You will also need:
 6. hyprsunset: Color temperature control
 7. hyprshutdown: Graceful shutdown utility
 8. playerctl: Media keys (play/pause, next, previous)
-9. python-gobject: Needed for the waybar audio, bluetooth and network popups (`waybar/scripts/`)
+9. python-gobject: Needed for the waybar audio, bluetooth, network and battery popups (`waybar/scripts/`)
 
 ```bash
 sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown playerctl python-gobject pipewire-audio pipewire-alsa pipewire-pulse
@@ -127,6 +127,22 @@ sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshu
 ```bash
 sudo pacman -S networkmanager
 sudo systemctl enable --now NetworkManager
+```
+
+## Power Profiles
+
+**NOTE**: Install this on anything with a battery (laptops). Desktops can skip it.
+
+Needed for the power profiles (Power Saver / Balanced / Performance) in waybar's battery popup (`waybar/scripts/battery-popup.py`). Click the battery icon in waybar to switch profiles.
+
+```bash
+sudo pacman -S power-profiles-daemon
+```
+
+Enable power-profiles-daemon:
+
+```bash
+sudo systemctl enable --now power-profiles-daemon
 ```
 
 ## Bluetooth
