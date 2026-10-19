@@ -94,26 +94,26 @@
     "menu": "on-click",
     "menu-file": "~/.config/waybar/hyprsunset_menu.xml",
     "menu-actions": {
-        "temp_5000": "pkill hyprsunset; hyprsunset -t 5000 &",
-        "temp_4000": "pkill hyprsunset; hyprsunset -t 4000 &",
-        "temp_3000": "pkill hyprsunset; hyprsunset -t 3000 &",
-        "turn_off": "pkill hyprsunset"
+      "temp_5000": "pkill hyprsunset; hyprsunset -t 5000 &",
+      "temp_4000": "pkill hyprsunset; hyprsunset -t 4000 &",
+      "temp_3000": "pkill hyprsunset; hyprsunset -t 3000 &",
+      "turn_off": "pkill hyprsunset",
     },
     "tooltip": true,
-    "tooltip-format": "Hyprsunset Menu"
+    "tooltip-format": "Hyprsunset Menu",
   },
   "network": {
-	"interface": "enp7s0",
-	"interval": 3,
-	"format": "{ifname}",
-	"format-wifi": "󰖩",
-	"format-ethernet": "󱘖",
-	"format-disconnected": "", //An empty format will hide the module.
-	// Click to expand into live speeds, click again to collapse
-	"format-alt": "󱘖  <span color='#e6e6e6'>↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}</span>",
-	"max-length": 50,
-	"tooltip": true,
-	"tooltip-format-ethernet": "{ifname}  {ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
-	"tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}"
-  }
+
+    "interval": 3,
+    "format": "{ifname}",
+    "format-wifi": "󰖩",
+    "format-ethernet": "󱘖",
+    "format-disconnected": "", //An empty format will hide the module.
+    // Click to expand into live speeds, click again to collapse
+    "format-alt": "󱘖  <span color='#e6e6e6'>↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}</span>",
+    "max-length": 50,
+    "tooltip": true,
+    "tooltip-format-ethernet": "{ifname}  {ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
+  },
 }
