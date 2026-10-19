@@ -180,6 +180,19 @@ menu separator {
 	background-color: #1e1e1e;
 }
 
+/* Right side: slightly larger than the 14px default. Nerd Font icons render
+   small at 14px, and the clock time is drawn at size='larger'. */
+#custom-hyprsunset,
+#network,
+#custom-power {
+	font-size: 16px;
+}
+
+#audio #wireplumber,
+#battery {
+	font-size: 15px;
+}
+
 #custom-power {
 	color: #fb4934;
 	background-color: #1e1e1e;
