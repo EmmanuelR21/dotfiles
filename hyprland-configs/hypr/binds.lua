@@ -4,7 +4,7 @@ local menu     = "hyprlauncher"
 
 
 -- Grim + slurp + swappy for screenshot selection
-hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
+hl.bind("Print", hl.dsp.exec_cmd("grim - | satty --filename - --fullscreen --initial-tool crop --copy-command wl-copy --early-exit"))
 
 -- Hide Waybar
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("killall -SIGUSR1 waybar"))

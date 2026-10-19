@@ -44,7 +44,7 @@ sudo pacman -S gamescope
 
 ## Post NVIDIA
 
-Make sure to install `kitty`/`ghostty`. Kitty is within the default hyprland config, if you choose to use another, just make sure to update the hyprland.lua config in `~/.config/` to use whatever terminal you use.
+Make sure to install `ghostty`. Ghostty is the terminal set in `binds.lua`, if you choose to use another, just make sure to update the `terminal` variable in `~/.config/hypr/binds.lua` to use whatever terminal you use.
 
 You will also need these fonts for waybar's text, icons and symbols:
 
@@ -63,13 +63,13 @@ Enable ly:
 sudo systemctl enable ly@tty1.service
 ```
 
-For screenshot abilities:
+For screenshot abilities (`Print` key, crop and copy to clipboard):
 
 ```bash
-sudo pacman -S grim slurp swappy
+sudo pacman -S grim satty wl-clipboard
 ```
 
-The configuration for this to work is already within the hyprland.lua config file.
+The configuration for this to work is already within the binds.lua config file.
 
 **You can now reboot.**
 
@@ -115,9 +115,11 @@ You will also need:
     3. pipewire-pulse: PulseAudio support
 6. hyprsunset: Color temperature control
 7. hyprshutdown: Graceful shutdown utility
+8. playerctl: Media keys (play/pause, next, previous)
+9. python-gobject: Needed for the waybar audio popup (`waybar/scripts/audio-popup.py`)
 
 ```bash
-sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown pipewire-audio pipewire-alsa pipewire-pulse
+sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown playerctl python-gobject pipewire-audio pipewire-alsa pipewire-pulse
 ```
 
 ## Apply Configs

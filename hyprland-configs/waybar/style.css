@@ -7,15 +7,15 @@ color: rgb(13, 44, 84);
  */
 
 * {
-	color: white;
-	font-family: "FreeSans", "Font Awesome 7 Free", "Symbols Nerd Font";
-	font-weight: bold;
-	font-size: 14px;
+    color: white;
+    font-family: "FreeSans", "Font Awesome 7 Free", "Symbols Nerd Font";
+    font-weight: bold;
+    font-size: 14px;
 }
 
 window#waybar {
-	background-color: rgba(50, 20, 40, 0);
-	border-radius: 20px;
+    background-color: rgba(50, 20, 40, 0);
+    border-radius: 20px;
 }
 
 #workspaces,
@@ -26,133 +26,136 @@ window#waybar {
 #battery,
 #network,
 #custom-power {
-	padding: 2px 8px;
-	/* Solid dark box (stands out on light wallpapers) + accent rim and top
+    padding: 2px 8px;
+    /* Solid dark box (stands out on light wallpapers) + accent rim and top
 	   highlight (stand out on dark wallpapers). Rim colors set per module below. */
-	border: 1px solid rgba(255, 255, 255, 0.14);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-	background-color: #1e1e1e;
-	/*background-color: rgba(255, 67, 101, 0.8);*/
-	border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    background-color: #1e1e1e;
+    /*background-color: rgba(255, 67, 101, 0.8);*/
+    border-radius: 5px;
 }
 
 /* Popup menus (hyprsunset + power) */
 menu {
-	background-color: #1e1e1e;
-	border: 1px solid #3c3c3c;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-	border-radius: 5px;
-	padding: 4px;
+    background-color: #1e1e1e;
+    border: 1px solid #3c3c3c;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    border-radius: 5px;
+    padding: 4px;
 }
 
 menuitem {
-	padding: 6px 14px;
-	border-radius: 3px;
-	background-image: none;
-	box-shadow: none;
-	transition: background-color 150ms ease-out;
+    padding: 6px 14px;
+    border-radius: 3px;
+    background-image: none;
+    box-shadow: none;
+    transition: background-color 150ms ease-out;
 }
 
 menuitem label {
-	color: #d8d8d8;
-	font-weight: normal;
-	transition: color 150ms ease-out;
+    color: #d8d8d8;
+    font-weight: normal;
+    transition: color 150ms ease-out;
 }
 
 menu separator {
-	background-color: #3c3c3c;
-	min-height: 1px;
-	margin: 4px 6px;
+    background-color: #3c3c3c;
+    min-height: 1px;
+    margin: 4px 6px;
 }
 
 /* Menus share a neutral dark-grey border; the accent shows on hover */
 #hyprsunset-menu menuitem:hover {
-	background-color: rgba(255, 197, 71, 0.12);
+    background-color: rgba(255, 197, 71, 0.12);
 }
 
 #hyprsunset-menu menuitem:hover label {
-	color: #ffc547;
+    color: #ffc547;
 }
 
-
 #power-menu menuitem:hover {
-	background-color: rgba(255, 122, 122, 0.12);
+    background-color: rgba(255, 122, 122, 0.12);
 }
 
 #power-menu menuitem:hover label {
-	color: #ff7a7a;
+    color: #ff7a7a;
 }
 
 #custom-bluelight {
-	padding-top: 4px;
+    padding-top: 4px;
 }
 /* rgba(FF8000EE) */
 #clock {
-	padding: 0 10px;
+    padding: 0 10px;
 }
 
 /* Per-module accents: solid dark boxes, saturated text color carries identity */
 /* Clock ("8e" style): mono box, grey icons, light date, amber time.
    Text colors live in the clock "format" markup in config.jsonc. */
 #clock {
-	color: #ffffff;
-	background-color: #1e1e1e;
-	border-color: transparent;
+    color: #ffffff;
+    background-color: #1e1e1e;
+    border-color: transparent;
 }
 
 #workspaces,
 #taskbar {
-	border-color: rgba(255, 197, 71, 0.4);
+    border-color: rgba(255, 197, 71, 0.4);
 }
 
 /* Hyprsunset: glowing amber icon tile (same tile style as network) */
 #custom-hyprsunset {
-	color: #fabd2f;
-	background-color: #1e1e1e;
-	border-color: transparent;
-	padding: 2px 10px;
-	transition: background-color 250ms ease-out, color 250ms ease-out;
+    color: #fabd2f;
+    background-color: #1e1e1e;
+    border-color: transparent;
+    padding: 2px 10px;
+    transition:
+        background-color 250ms ease-out,
+        color 250ms ease-out;
 }
 
 #custom-hyprsunset:hover {
-	color: #fcd36e;
-	background-color: #2a2a2a;
+    color: #fcd36e;
+    background-color: #2a2a2a;
 }
 
 /* Speaker + mic share one box (group/audio in config) */
 #audio {
-	background-color: #1e1e1e;
-	border-radius: 5px;
-	padding: 0 2px;
-	box-shadow: none;
+    background-color: #1e1e1e;
+    /* Silver line under the whole pill, grows from the center on hover */
+    background-image: linear-gradient(#d6dde9, #d6dde9);
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: 0% 2px;
+    border-radius: 5px;
+    padding: 0 6px;
+    box-shadow: none;
+    transition:
+        background-size 300ms cubic-bezier(0.4, 0, 0.2, 1),
+        background-color 300ms ease-out;
+}
+
+#audio:hover {
+    background-color: #262626;
+    background-size: 55% 2px;
 }
 
 #audio #wireplumber {
-	color: #d6dde9;
-	background-color: transparent;
-	border: none;
-	box-shadow: none;
-	padding: 2px 8px;
-	border-radius: 3px;
-	transition: color 400ms ease-in-out, background-color 400ms ease-in-out;
+    color: #d6dde9;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: color 400ms ease-in-out;
 }
 
-/* Thin divider between speaker and mic */
-#audio #wireplumber.source {
-	border-left: 1px solid rgba(230, 230, 230, 0.2);
-}
-
-#audio #wireplumber:hover {
-	color: #eef2f8;
-}
-
-/* Muted: faded text on a dark, diagonally hatched "switched off" panel */
+/* One unit: no divider or per-half hover/panels. Click opens the popup
+   (scripts/audio-popup.py). Muted side: slashed icon in a soft dusty red
+   (kept softer than the power button's #fb4934). */
 #audio #wireplumber.muted {
-	color: #9499a2;
-	background-color: rgba(0, 0, 0, 0.35);
-	background-image: repeating-linear-gradient(-45deg,
-		rgba(214, 221, 233, 0.08) 0px, rgba(214, 221, 233, 0.08) 2px,
-		transparent 2px, transparent 6px);
+    color: #ea6a5f;
 }
 
 /* Network: compact icon tile; click expands into live speeds
@@ -161,23 +164,25 @@ menu separator {
      hover -> color: #9be8df;  background-color: rgba(110, 214, 204, 0.2);
 */
 #network {
-	color: #fe8019;
-	background-color: #1e1e1e;
-	border-color: transparent;
-	padding: 2px 10px;
-	transition: background-color 250ms ease-out, color 250ms ease-out;
+    color: #fe8019;
+    background-color: #1e1e1e;
+    border-color: transparent;
+    padding: 2px 10px;
+    transition:
+        background-color 250ms ease-out,
+        color 250ms ease-out;
 }
 
 #network:hover {
-	background-color: #2a2a2a;
-	color: #ffa55c;
+    background-color: #2a2a2a;
+    color: #ffa55c;
 }
 
 /* Right side ("Graphite, amber icons"): CSS color = icon; the text parts
    are set to #e6e6e6 via markup in config.jsonc */
 #battery {
-	color: #f0f0f0;
-	background-color: #1e1e1e;
+    color: #f0f0f0;
+    background-color: #1e1e1e;
 }
 
 /* Right side: slightly larger than the 14px default. Nerd Font icons render
@@ -185,106 +190,112 @@ menu separator {
 #custom-hyprsunset,
 #network,
 #custom-power {
-	font-size: 16px;
+    font-size: 16px;
 }
 
 #audio #wireplumber,
 #battery {
-	font-size: 15px;
+    font-size: 15px;
 }
 
 #custom-power {
-	color: #fb4934;
-	background-color: #1e1e1e;
-	border-color: transparent;
+    color: #fb4934;
+    background-color: #1e1e1e;
+    border-color: transparent;
 }
 
 /* Strip the GTK theme's button styling (gradients/borders/shadows on hover) */
-/* Accent for the workspace/taskbar indicators. Matches the clock's amber time
-   (set in config.jsonc); change this line to recolor both modules
-   (white #ffffff was the original, coral #ff8a70 the previous). */
-@define-color nav-accent #ffc547;
-
 #workspaces button,
 #workspaces button:hover,
 #taskbar button,
 #taskbar button:hover {
-	background-image: none;
-	border: none;
-	box-shadow: none;
-	text-shadow: none;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    text-shadow: none;
 }
 
 /* The "background" is a thin bar drawn with a gradient; animating its size
-   makes it grow out from the center under the number */
+   makes it grow out from the center under the number. White to match the
+   workspace number text. */
 #workspaces button {
-	background-color: transparent;
-	background-image: linear-gradient(@nav-accent, @nav-accent);
-	background-repeat: no-repeat;
-	background-position: center bottom;
-	background-size: 0% 2px;
-	min-width: 2px;
-	border-radius: 3px;
-	padding: 0 7px;
-	opacity: 0.4;
-	transition: background-size 300ms cubic-bezier(0.4, 0, 0.2, 1),
-		opacity 300ms ease-out;
+    background-color: transparent;
+    background-image: linear-gradient(#ffffff, #ffffff);
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: 0% 2px;
+    min-width: 2px;
+    border-radius: 3px;
+    padding: 0 7px;
+    opacity: 0.4;
+    transition:
+        background-size 300ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 300ms ease-out;
 }
 
 #workspaces button:hover {
-	opacity: 0.75;
-	background-color: transparent;
-	background-image: linear-gradient(alpha(@nav-accent, 0.7), alpha(@nav-accent, 0.7));
-	background-size: 30% 2px;
+    opacity: 0.75;
+    background-color: transparent;
+    background-image: linear-gradient(
+        rgba(255, 255, 255, 0.7),
+        rgba(255, 255, 255, 0.7)
+    );
+    background-size: 30% 2px;
 }
 
 /* Active workspace: full brightness, bar grows out to most of the width */
 #workspaces button.active {
-	opacity: 1;
-	background-image: linear-gradient(@nav-accent, @nav-accent);
-	background-size: 65% 2px;
+    opacity: 1;
+    background-image: linear-gradient(#ffffff, #ffffff);
+    background-size: 65% 2px;
 }
 
 /* A window on another workspace wants attention */
 #workspaces button.urgent {
-	opacity: 1;
-	animation: urgent-blink 0.8s ease-in-out infinite alternate;
+    opacity: 1;
+    animation: urgent-blink 0.8s ease-in-out infinite alternate;
 }
 
 @keyframes urgent-blink {
-	from { background-color: #1e1e1e; }
-	to   { background-color: rgba(255, 67, 101, 0.8); }
+    from {
+        background-color: #1e1e1e;
+    }
+    to {
+        background-color: rgba(255, 67, 101, 0.8);
+    }
 }
 
 #taskbar button {
-	background-color: transparent;
-	padding: 0 2px;
-	border-radius: 3px;
-	opacity: 0.5;
-	transition: opacity 200ms ease-in-out, box-shadow 200ms ease-in-out,
-		background-color 200ms ease-in-out;
+    background-color: transparent;
+    padding: 0 2px;
+    border-radius: 3px;
+    opacity: 0.5;
+    transition:
+        opacity 200ms ease-in-out,
+        box-shadow 200ms ease-in-out,
+        background-color 200ms ease-in-out;
 }
 
 #taskbar button:hover {
-	opacity: 0.85;
-	background-color: alpha(@nav-accent, 0.06);
+    opacity: 0.85;
+    background-color: rgba(255, 255, 255, 0.06);
 }
 
 /* Focused window: full brightness + thin underline */
 #taskbar button.active {
-	opacity: 1;
-	background-color: transparent;
-	box-shadow: none;
+    opacity: 1;
+    background-color: transparent;
+    box-shadow: none;
 }
 
 #taskbar button.minimized {
-	opacity: 0.35;
+    opacity: 0.35;
 }
 
 #taskbar.empty {
-	padding: 0;
-	margin: 0;
-	background: transparent;
-	border: none;
-	box-shadow: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
