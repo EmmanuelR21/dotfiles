@@ -108,18 +108,51 @@ You will also need:
 3. hypridle: Idle management
 4. hyprlock: Lockscreen
 5. wireplumber: Audio session manager
-    - Pipewire will need a few more packages to work properly.
+   - Pipewire will need a few more packages to work properly.
+   1. pipewire-audio: Meta packages
+   2. pipewire-alsa: ALSA support
+   3. pipewire-pulse: PulseAudio support
 
-    1. pipewire-audio: Meta packages
-    2. pipewire-alsa: ALSA support
-    3. pipewire-pulse: PulseAudio support
 6. hyprsunset: Color temperature control
 7. hyprshutdown: Graceful shutdown utility
 8. playerctl: Media keys (play/pause, next, previous)
-9. python-gobject: Needed for the waybar audio popup (`waybar/scripts/audio-popup.py`)
+9. python-gobject: Needed for the waybar audio, bluetooth and network popups (`waybar/scripts/`)
 
 ```bash
 sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown playerctl python-gobject pipewire-audio pipewire-alsa pipewire-pulse
+```
+
+**NOTE**: The waybar network module and its popup (`waybar/scripts/network-popup.py`) use NetworkManager. It's expected to already be set up, but if it isn't:
+
+```bash
+sudo pacman -S networkmanager
+sudo systemctl enable --now NetworkManager
+```
+
+## Bluetooth
+
+Needed for waybar's bluetooth module and its popup (`waybar/scripts/bluetooth-popup.py`).
+
+```bash
+sudo pacman -S bluez bluez-utils
+```
+
+Enable bluetooth:
+
+```bash
+sudo systemctl enable --now bluetooth
+```
+
+Click the bluetooth icon in waybar to turn it on/off and connect/disconnect devices. To add a new device, put it in pairing mode, hit **Scan**, then **Pair**.
+
+If a device won't pair from the popup, use `bluetoothctl` instead (replace the address with your device's, shown after `scan on`):
+
+```bash
+bluetoothctl
+scan on
+pair XX:XX:XX:XX:XX:XX
+trust XX:XX:XX:XX:XX:XX
+connect XX:XX:XX:XX:XX:XX
 ```
 
 ## Apply Configs
@@ -173,11 +206,11 @@ The same configs work on every machine. Device differences are detected automati
 
 `hypr/host.lua` detects:
 
-| Value | Meaning | Detected from |
-| --- | --- | --- |
-| `host.profile` | `"desktop"` or `"laptop"` | `/sys/class/dmi/id/chassis_type` or a battery |
-| `host.has_battery` | Has a battery | `/sys/class/power_supply/BAT0` (or `BAT1`) |
-| `host.has_nvidia` | NVIDIA driver loaded | `/proc/driver/nvidia/version` |
+| Value              | Meaning                   | Detected from                                 |
+| ------------------ | ------------------------- | --------------------------------------------- |
+| `host.profile`     | `"desktop"` or `"laptop"` | `/sys/class/dmi/id/chassis_type` or a battery |
+| `host.has_battery` | Has a battery             | `/sys/class/power_supply/BAT0` (or `BAT1`)    |
+| `host.has_nvidia`  | NVIDIA driver loaded      | `/proc/driver/nvidia/version`                 |
 
 What uses it:
 
@@ -200,9 +233,9 @@ To change a device's monitor, edit its block in `hypr/monitors.lua` (`hyprctl mo
 2. Create the wallpaper links (see [Wallpapers](#wallpapers)).
 3. Copy configs (see [Apply Configs](#apply-configs)).
 4. Log out and back in, then verify:
-    - `hyprctl monitors` shows the right monitor and scale
-    - `hyprctl configerrors` prints nothing
-    - `echo $LIBVA_DRIVER_NAME` prints `nvidia` on NVIDIA machines, nothing otherwise
+   - `hyprctl monitors` shows the right monitor and scale
+   - `hyprctl configerrors` prints nothing
+   - `echo $LIBVA_DRIVER_NAME` prints `nvidia` on NVIDIA machines, nothing otherwise
 
 ## Syncing Changes Between Devices
 
@@ -223,8 +256,8 @@ How it works:
 - Mirrors `hypr/` and `waybar/` exactly, so deleted or renamed files are removed on the other side too.
 - Backs up whatever it replaces to `~/.local/state/dotfiles-sync/backups/` (keeps the last 10).
 - Warns before you lose work:
-    - **Option 1** when the repo has changes this device hasn't applied yet (e.g. you pulled from the other machine). Copying would undo them, so run option 2 first.
-    - **Option 2** when this device has edits that were never copied to the repo.
+  - **Option 1** when the repo has changes this device hasn't applied yet (e.g. you pulled from the other machine). Copying would undo them, so run option 2 first.
+  - **Option 2** when this device has edits that were never copied to the repo.
 - Don't run it with `sudo`.
 
 Because it mirrors, any config file that should exist on both machines must exist on both (e.g. `batteryOpts.lua` stays on the PC even though only the laptop loads it). Check the `-` lines in the preview before confirming.
