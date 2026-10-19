@@ -11,6 +11,7 @@
   "modules-right": [
     "custom/hyprsunset",
     "group/audio",
+    "bluetooth",
     "network",
     "battery",
     "custom/power",
@@ -31,10 +32,12 @@
     "sort-by-app-id": true,
     "squash-list": ["*"],
   },
-  // Hidden automatically on machines without a battery
+  // Hidden automatically on machines without a battery.
+  // Click opens scripts/battery-popup.py (battery details + power profiles).
   "battery": {
     "bat": "BAT0",
     "interval": 60,
+    "on-click": "$HOME/.config/waybar/scripts/battery-popup.py",
     "format": "<span color='#f0f0f0'>{capacity}%</span> {icon}",
     "format-icons": {
       "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
@@ -102,18 +105,43 @@
     "tooltip": true,
     "tooltip-format": "Hyprsunset Menu",
   },
+  // Click opens scripts/bluetooth-popup.py (power toggle, devices, pairing)
+  "bluetooth": {
+    "format": "󰂯",
+    "format-off": "󰂲",
+    "format-disabled": "󰂲",
+    "format-connected": "󰂱 {device_alias}",
+    // Device name + battery in silver behind a thin divider. rise lifts the
+    // small battery glyph to the text's center; the hair space (U+200A) is the gap.
+    "format-connected-battery": "󰂱 <span color='#d6dde9'>{device_alias}</span> <span color='#555555'>|</span> <span color='#d6dde9'><span size='small' rise='1536'>󰁹</span> {device_battery_percentage}%</span>",
+    "max-length": 30,
+    // "format-device-preference": [ "device1", "device2" ], // preference list deciding the displayed device
+    "on-click": "$HOME/.config/waybar/scripts/bluetooth-popup.py",
+    "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
+    "tooltip-format-off": "Bluetooth off",
+    "tooltip-format-disabled": "Bluetooth blocked (rfkill)",
+    "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%",
+  },
+  // Click opens scripts/network-popup.py (Wi-Fi on/off, scan, connect/disconnect,
+  // live up/down speeds). Stays visible when disconnected/off so the popup is
+  // always one click away. Connection changes are instant regardless of
+  // interval; it only refreshes the tooltip's signal strength.
   "network": {
-
-    "interval": 3,
-    "format": "{ifname}",
+    "interval": 10,
+    "format": "󰖩",
     "format-wifi": "󰖩",
     "format-ethernet": "󱘖",
-    "format-disconnected": "", //An empty format will hide the module.
-    // Click to expand into live speeds, click again to collapse
-    "format-alt": "󱘖  <span color='#e6e6e6'>↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}</span>",
-    "max-length": 50,
+    "format-linked": "󰖩",
+    "format-disconnected": "󰖪",
+    "format-disabled": "󰖪",
+    "on-click": "$HOME/.config/waybar/scripts/network-popup.py",
     "tooltip": true,
-    "tooltip-format-ethernet": "{ifname}  {ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
-    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
+    "tooltip-format-disconnected": "Not connected",
+    "tooltip-format-disabled": "Wi-Fi off",
+    "tooltip-format-linked": "{ifname}: connected, no IP yet",
+    "tooltip-format-ethernet": "{ifname}  {ipaddr}/{cidr}",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr}",
   },
 }

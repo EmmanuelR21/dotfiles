@@ -35,7 +35,10 @@ def has_battery():
     except OSError:
         return False
 
-POLL_MS = 1000  # how often to pick up volume changes made elsewhere
+# How often to pick up volume changes made elsewhere (media keys, other apps).
+# Each poll runs wpctl twice, so this is kept slow; changes made in the popup
+# itself update instantly regardless.
+POLL_MS = 2000
 
 ICONS = {
     "sink": ("\U000f057e", "\U000f0581"),    # speaker, speaker-off

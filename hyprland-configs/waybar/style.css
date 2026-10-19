@@ -24,6 +24,7 @@ window#waybar {
 #wireplumber,
 #custom-hyprsunset,
 #battery,
+#bluetooth,
 #network,
 #custom-power {
     padding: 2px 8px;
@@ -158,11 +159,8 @@ menu separator {
     color: #ea6a5f;
 }
 
-/* Network: compact icon tile; click expands into live speeds
-   Previous aqua version (to go back, swap these into the rules below):
-     color: #6ed6cc;  background-color: rgba(110, 214, 204, 0.12);
-     hover -> color: #9be8df;  background-color: rgba(110, 214, 204, 0.2);
-*/
+/* Network: orange icon tile; click opens scripts/network-popup.py.
+   Disconnected / Wi-Fi off dims to a muted brown-grey. */
 #network {
     color: #fe8019;
     background-color: #1e1e1e;
@@ -178,6 +176,34 @@ menu separator {
     color: #ffa55c;
 }
 
+#network.disconnected,
+#network.disabled,
+#network.linked {
+    color: #7c6f64;
+}
+
+/* Bluetooth: dark blue icon + text; click opens scripts/bluetooth-popup.py.
+   Off/blocked dims to a slate grey-blue. */
+#bluetooth {
+    color: #3567d0;
+    background-color: #1e1e1e;
+    border-color: transparent;
+    padding: 2px 10px;
+    transition:
+        background-color 250ms ease-out,
+        color 250ms ease-out;
+}
+
+#bluetooth:hover {
+    background-color: #2a2a2a;
+    color: #4a7ae0;
+}
+
+#bluetooth.off,
+#bluetooth.disabled {
+    color: #45526b;
+}
+
 /* Right side ("Graphite, amber icons"): CSS color = icon; the text parts
    are set to #e6e6e6 via markup in config.jsonc */
 #battery {
@@ -188,6 +214,7 @@ menu separator {
 /* Right side: slightly larger than the 14px default. Nerd Font icons render
    small at 14px, and the clock time is drawn at size='larger'. */
 #custom-hyprsunset,
+#bluetooth,
 #network,
 #custom-power {
     font-size: 16px;
@@ -250,10 +277,13 @@ menu separator {
     background-size: 65% 2px;
 }
 
-/* A window on another workspace wants attention */
+/* A window on another workspace wants attention: blink a few times, then
+   stay red until visited. A finite count matters on battery: an infinite
+   animation redraws the bar every frame for as long as the flag is set. */
 #workspaces button.urgent {
     opacity: 1;
-    animation: urgent-blink 0.8s ease-in-out infinite alternate;
+    background-color: rgba(255, 67, 101, 0.8);
+    animation: urgent-blink 0.8s ease-in-out 7 alternate;
 }
 
 @keyframes urgent-blink {
