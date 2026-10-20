@@ -1,0 +1,126 @@
+# Dunst config
+# Palette follows hyprland.lua: active border #999999, inactive #595959, shadow #1a1a1a
+# Surfaces, text and fonts match hyprtoolkit.conf / hyprlock.conf
+#
+# Readability rules used throughout:
+#   - Text stays bright on every urgency; urgency is shown by the border, never by dimming text
+#   - Solid background (no transparency) so the wallpaper never bleeds through text
+#   - Real font size, extra line spacing, generous padding, wide enough to avoid cramped wrapping
+#
+# Animations come from Hyprland (layer rule "notifications" in hyprland.lua), not dunst.
+
+[global]
+    ### Placement ###
+    monitor = 0
+    follow = none
+    origin = top-right
+    # Dunst is already placed below waybar's reserved area, so this is just
+    # the gap: 6px matches gaps_out and waybar's own margin.
+    offset = (6, 6)
+    layer = overlay
+
+    ### Size ###
+    width = (320, 440)
+    height = (0, 400)
+    notification_limit = 6
+    indicate_hidden = yes
+
+    ### Frame / shape (matches windows: square, 2px border) ###
+    corner_radius = 0
+    frame_width = 2
+    frame_color = "#999999"
+    # Each notification gets its own box, spaced like tiled windows (gaps_in * 2)
+    gap_size = 6
+    separator_height = 0
+    separator_color = frame
+    transparency = 0
+
+    ### Spacing ###
+    padding = 14
+    horizontal_padding = 16
+    text_icon_padding = 14
+
+    ### Text ###
+    font = Adwaita Sans 12
+    line_height = 3
+    markup = full
+    # App name as a small label, summary bold and bright, body in clean light grey
+    format = "<span size='small' foreground='#a6a6a6'>%a</span>\n<b><span foreground='#ffffff'>%s</span></b>\n%b"
+    alignment = left
+    vertical_alignment = center
+    ellipsize = end
+    ignore_newline = no
+    show_age_threshold = 60
+    stack_duplicates = true
+    hide_duplicate_count = false
+    show_indicators = no
+
+    ### Icons ###
+    enable_recursive_icon_lookup = true
+    icon_theme = "breeze-dark, Adwaita"
+    icon_position = left
+    min_icon_size = 32
+    max_icon_size = 48
+    icon_corner_radius = 0
+
+    ### Progress bar (volume, brightness, etc.) ###
+    progress_bar = true
+    progress_bar_height = 6
+    progress_bar_frame_width = 0
+    progress_bar_min_width = 150
+    progress_bar_max_width = 400
+    progress_bar_corner_radius = 0
+
+    ### History ###
+    sticky_history = yes
+    history_length = 20
+
+    ### Misc ###
+    browser = /usr/bin/xdg-open
+    always_run_script = true
+    title = Dunst
+    class = Dunst
+    ignore_dbusclose = false
+
+    ### Mouse ###
+    mouse_left_click = close_current
+    mouse_middle_click = do_action, close_current
+    mouse_right_click = close_all
+
+[experimental]
+    # Hovering a notification stops its timer, so you can finish reading it
+    pause_on_mouse_over = true
+
+[urgency_low]
+    background = "#1a1a1a"
+    foreground = "#e6e6e6"
+    frame_color = "#595959"
+    highlight = "#999999"
+    timeout = 6
+    default_icon = dialog-information
+
+[urgency_normal]
+    background = "#1a1a1a"
+    foreground = "#e6e6e6"
+    frame_color = "#999999"
+    highlight = "#d9d9d9"
+    timeout = 10
+    override_pause_level = 30
+    default_icon = dialog-information
+
+[urgency_critical]
+    background = "#221a1a"
+    foreground = "#ffffff"
+    frame_color = "#c86464"
+    highlight = "#c86464"
+    timeout = 0
+    override_pause_level = 60
+    default_icon = dialog-warning
+
+# Volume / mic / brightness pop-ups from hypr/scripts/osd.sh.
+# Short-lived, no body line, and kept out of history so it isn't full of "65%".
+[osd]
+    stack_tag = osd
+    format = "<span size='small' foreground='#a6a6a6'>%a</span>\n<b><span foreground='#ffffff'>%s</span></b>"
+    timeout = 1500ms
+    history_ignore = yes
