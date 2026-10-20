@@ -211,6 +211,15 @@ hl.window_rule({
     float = true,
 })
 
+-- Dunst notifications slide in from / out to the right edge.
+-- Uses the layers/layersOut timing above (snap, 350ms in / 250ms out).
+hl.layer_rule({
+    name      = "dunst-slide",
+    match     = { namespace = "^notifications$" },
+
+    animation = "slide right",
+})
+
 ------------------------
 ---- BATTERY SAVING ----
 ------------------------

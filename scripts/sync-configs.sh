@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Sync Hyprland configs (hypr/ and waybar/) between this device and the
+# Sync Hyprland configs (hypr/, waybar/ and dunst/) between this device and the
 # dotfiles repo, in either direction.
 #
 # Folders are mirrored exactly: files deleted or renamed on one side are
@@ -17,7 +17,8 @@ STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-sync"
 BACKUP_ROOT="$STATE_DIR/backups"
 LAST_SYNC="$STATE_DIR/last-sync" # fingerprint of the configs at the last sync on this device
 KEEP_BACKUPS=10
-FOLDERS=(hypr waybar)
+FOLDERS=(hypr waybar dunst)
+FOLDER_LIST="{$(IFS=,; echo "${FOLDERS[*]}")}" # e.g. {hypr,waybar,dunst}, for messages
 
 if [[ -t 1 ]]; then
     bold=$'\e[1m' green=$'\e[32m' red=$'\e[31m' yellow=$'\e[33m' reset=$'\e[0m'
@@ -49,7 +50,7 @@ kind() {
     if [[ -L $1 ]]; then echo link; elif [[ -d $1 ]]; then echo dir; else echo file; fi
 }
 
-# A single hash of every file's path + contents under root/{hypr,waybar}.
+# A single hash of every file's path + contents under root/<each of FOLDERS>.
 fingerprint() {
     local root="$1" f
     for f in "${FOLDERS[@]}"; do
@@ -137,8 +138,8 @@ main() {
     [[ -d $REPO_DIR ]] || die "Can't find $REPO_DIR"
 
     echo "${bold}Hyprland config sync${reset}"
-    echo "  Device:   $DEVICE_DIR/{hypr,waybar}"
-    echo "  Dotfiles: $REPO_DIR/{hypr,waybar}"
+    echo "  Device:   $DEVICE_DIR/$FOLDER_LIST"
+    echo "  Dotfiles: $REPO_DIR/$FOLDER_LIST"
     echo
     echo "  1) This device -> dotfiles   (save this machine's configs to the repo)"
     echo "  2) Dotfiles -> this device   (apply the repo's configs to this machine)"
@@ -222,9 +223,10 @@ main() {
         echo
         echo "Commit with:"
         echo "  cd $DOTFILES && git add -A && git commit -m \"...\" && git push"
-    elif [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && confirm "Reload Hyprland and waybar now?" y; then
+    elif [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && confirm "Reload Hyprland, waybar and dunst now?" y; then
         hyprctl reload >/dev/null && echo "Hyprland reloaded."
         pkill -SIGUSR2 waybar && echo "Waybar reloaded." || true
+        dunstctl reload 2>/dev/null && echo "Dunst reloaded." || true
     fi
 }
 

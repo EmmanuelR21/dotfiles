@@ -92,9 +92,10 @@ You will also need:
 - qt6-wayland (QT Support)
 - dolphin (file manager)
 - dunst (notification daemon)
+- libnotify (`notify-send`, used by the battery warnings and volume/brightness pop-ups)
 
 ```bash
-sudo pacman -S hyprlauncher librewolf git openssh hyprpolkitagent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland dolphin dunst
+sudo pacman -S hyprlauncher librewolf git openssh hyprpolkitagent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland dolphin dunst libnotify
 ```
 
 **OPTIONAL: Install Paru**
@@ -177,7 +178,22 @@ connect XX:XX:XX:XX:XX:XX
 # Assuming you have this repository in your home directory
 cd ~/dotfiles
 git pull
-cp -r ~/dotfiles/hyprland-configs/hypr ~/dotfiles/hyprland-configs/waybar ~/.config/
+cp -r ~/dotfiles/hyprland-configs/hypr ~/dotfiles/hyprland-configs/waybar ~/dotfiles/hyprland-configs/dunst ~/.config/
+```
+
+## Notifications
+
+Dunst is styled to match Hyprland (`dunst/dunstrc`): same greys, square 2px border, Adwaita Sans 12. Urgency is shown by the border colour (grey / light grey / red), text always stays bright. Hovering a notification pauses its timer. Notifications slide in from the right (layer rule in `hyprland.lua`).
+
+Scripts in `hypr/scripts/`:
+
+- **`osd.sh`**: the volume, mic mute and brightness keys (`binds.lua`) go through this. It changes the value, then shows a pop-up with a level bar that updates in place while the key is held. Pop-ups aren't saved in notification history. Brightness pop-ups only show on machines with a screen backlight.
+- **`battery-notify.sh`**: started by `autostart.lua` only when `host.has_battery`. Warns at 20% (normal) and 10% (critical, stays until dismissed or plugged in), and announces charger connected / disconnected. Thresholds are at the top of the script.
+
+To test that dunst is working:
+
+```bash
+notify-send "Hello" "Test notification"
 ```
 
 ## Wallpapers
@@ -232,6 +248,7 @@ What uses it:
 
 - **`monitors.lua`**: desktop gets `DP-1` @ 180Hz, laptop gets `eDP-1` @ scale 1.07. Any other monitor falls back to `preferred` / `auto`.
 - **`hyprland.lua`**: NVIDIA env vars only apply if `has_nvidia`. `batteryOpts.lua` (blur off) only loads if `has_battery`, at the end of the file so it overrides earlier settings.
+- **`autostart.lua`**: `scripts/battery-notify.sh` (battery warnings) only starts if `has_battery`.
 - **Waybar**: the `battery` module is in the shared config. Waybar hides it automatically on machines without a battery.
 
 To check what a machine is detected as:
@@ -264,12 +281,12 @@ Use the sync script:
 It asks which direction to copy:
 
 1. **This device -> dotfiles**: after editing configs on a machine. Then commit and push.
-2. **Dotfiles -> this device**: on the other machine. Offers to `git pull` first, and to reload Hyprland and waybar after.
+2. **Dotfiles -> this device**: on the other machine. Offers to `git pull` first, and to reload Hyprland, waybar and dunst after.
 
 How it works:
 
 - Shows a preview (`+` added, `-` deleted, `~` changed) and asks before changing anything.
-- Mirrors `hypr/` and `waybar/` exactly, so deleted or renamed files are removed on the other side too.
+- Mirrors `hypr/`, `waybar/` and `dunst/` exactly, so deleted or renamed files are removed on the other side too.
 - Backs up whatever it replaces to `~/.local/state/dotfiles-sync/backups/` (keeps the last 10).
 - Warns before you lose work:
   - **Option 1** when the repo has changes this device hasn't applied yet (e.g. you pulled from the other machine). Copying would undo them, so run option 2 first.
