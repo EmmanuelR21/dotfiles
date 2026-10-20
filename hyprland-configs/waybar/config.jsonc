@@ -81,29 +81,24 @@
     "on-scroll-up": "",
     "on-scroll-down": "",
   },
+  // Click opens scripts/power-popup.py (suspend / reboot / shut down)
   "custom/power": {
     "format": "⏻",
     "tooltip": false,
-    "menu": "on-click",
-    "menu-file": "$HOME/.config/waybar/power_menu.xml", // Menu file in resources folder
-    "menu-actions": {
-      "shutdown": "hyprshutdown -p 'systemctl poweroff'",
-      "reboot": "hyprshutdown -p 'systemctl reboot'",
-      "suspend": "systemctl suspend",
-    },
+    "on-click": "$HOME/.config/waybar/scripts/power-popup.py",
   },
+  // Click opens scripts/hyprsunset-popup.py (brightness + night light).
+  // hyprsunset only runs while night light / software dimming is active.
   "custom/hyprsunset": {
     "format": "󰖛",
-    "menu": "on-click",
-    "menu-file": "~/.config/waybar/hyprsunset_menu.xml",
-    "menu-actions": {
-      "temp_5000": "pkill hyprsunset; hyprsunset -t 5000 &",
-      "temp_4000": "pkill hyprsunset; hyprsunset -t 4000 &",
-      "temp_3000": "pkill hyprsunset; hyprsunset -t 3000 &",
-      "turn_off": "pkill hyprsunset",
-    },
+    "on-click": "$HOME/.config/waybar/scripts/hyprsunset-popup.py",
+    // Without exec/interval a custom module never runs its update, so the
+    // tooltip text is never set and GTK shows an empty box or a stale tooltip
+    // from a neighbor. "once" runs it a single time at startup (no polling).
+    "interval": "once",
     "tooltip": true,
-    "tooltip-format": "Hyprsunset Menu",
+    // Pango markup: "&" must be written as &amp;
+    "tooltip-format": "Brightness &amp; night light",
   },
   // Click opens scripts/bluetooth-popup.py (power toggle, devices, pairing)
   "bluetooth": {
