@@ -117,7 +117,7 @@ You will also need:
 6. hyprsunset: Color temperature control
 7. hyprshutdown: Graceful shutdown utility
 8. playerctl: Media keys (play/pause, next, previous)
-9. python-gobject: Needed for the waybar audio, bluetooth, network and battery popups (`waybar/scripts/`)
+9. python-gobject: Needed for the waybar audio, bluetooth, network, battery, hyprsunset and power popups (`waybar/scripts/`)
 
 ```bash
 sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown playerctl python-gobject pipewire-audio pipewire-alsa pipewire-pulse
@@ -128,6 +128,12 @@ sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshu
 ```bash
 sudo pacman -S networkmanager
 sudo systemctl enable --now NetworkManager
+```
+
+**OPTIONAL**: For desktops. Lets the brightness slider in waybar's hyprsunset popup (`waybar/scripts/hyprsunset-popup.py`) control external monitors over DDC/CI. Without it, the slider falls back to software dimming. Laptops use `brightnessctl` instead.
+
+```bash
+sudo pacman -S ddcutil
 ```
 
 ## Power Profiles
