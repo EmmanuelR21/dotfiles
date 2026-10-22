@@ -55,7 +55,7 @@ fingerprint() {
     local root="$1" f
     for f in "${FOLDERS[@]}"; do
         [[ -d $root/$f ]] || continue
-        (cd "$root" && find "$f" -type f -print0 | sort -z | xargs -0 -r sha256sum)
+        (cd "$root" && find "$f" -type f -not -path '*/__pycache__/*' -print0 | sort -z | xargs -0 -r sha256sum)
     done | sha256sum | cut -d' ' -f1
 }
 
@@ -102,7 +102,7 @@ preview() {
         else
             echo "  ${yellow}~ $line${reset}"
         fi
-    done < <(diff -rq "$src" "$dest" || true)
+    done < <(diff -rq -x __pycache__ "$src" "$dest" || true)
 }
 
 # Make dest an exact copy of src. Files are updated in place (not by swapping
@@ -114,6 +114,7 @@ mirror() {
     # Remove anything in dest that isn't in src, or whose type changed
     # (file / folder / symlink). -depth lists children before their parent folder.
     while IFS= read -r -d '' rel; do
+        [[ /$rel/ == */__pycache__/* ]] && continue # per-machine Python cache
         exists "$dest/$rel" || continue
         if ! exists "$src/$rel" || [[ "$(kind "$src/$rel")" != "$(kind "$dest/$rel")" ]]; then
             rm -rf -- "${dest:?}/$rel"
