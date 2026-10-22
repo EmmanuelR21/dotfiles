@@ -1,32 +1,18 @@
 #!/usr/bin/env python3
 """Battery / power profile popup for the Waybar battery module.
 
-Running it opens the popup; running it again while it's open closes it, so it
-works directly as a Waybar "on-click" command (same as the other popups).
+Click to open, click again to close (see popup_common.py).
 
 Battery info comes from UPower and profiles from power-profiles-daemon, both
 over D-Bus through Gio. Needs: power-profiles-daemon, upower (a dependency of
 it), python-gobject, gtk3 and gtk-layer-shell.
 """
-import json
-import os
-import signal
-import subprocess
-import sys
+from gi.repository import Gio
+from popup_common import GLib, Gtk, Popup, label, run
 
-import gi
-
-gi.require_version("Gtk", "3.0")
-gi.require_version("GtkLayerShell", "0.1")
-from gi.repository import GLib, Gtk, Gdk, Gio, GtkLayerShell  # noqa: E402
-
-# Panel position. TOP = bar margin (6) + bar height (30) + 4px gap.
-# Horizontally the panel's right edge is placed CURSOR_OFFSET px right of the
-# mouse at click time (via hyprctl), so it lines up under the module.
-MARGIN_TOP = 40
+# The panel's right edge sits CURSOR_OFFSET px right of the mouse at click time
 CURSOR_OFFSET = 30
 FALLBACK_MARGIN_RIGHT = 50
-EDGE_GAP = 6
 
 POLL_MS = 5000  # time estimates drift slowly; profile/charge changes are pushed instantly
 
@@ -62,27 +48,11 @@ STATE_TEXT = {CHARGING: "Charging", DISCHARGING: "On battery", EMPTY: "Empty", F
 DEGRADED_TEXT = {"lap-detected": "laptop is on your lap",
                  "high-operating-temperature": "running hot"}
 
-PID_FILE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "waybar-battery-popup.pid")
 
 # Each profile has its own accent: mint (saver), silver (balanced, the bar's
 # battery color family), peach (performance).
-CSS = b"""
-* {
-    font-family: "FreeSans", "Symbols Nerd Font";
-    font-weight: bold;
-    font-size: 13px;
-    color: #ffffff;
-}
-window, #catcher { background-color: transparent; }
-
-#panel {
-    background-color: #1e1e1e;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 5px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-    padding: 12px 14px;
-    min-width: 320px;
-}
+CSS = """
+#panel { padding: 12px 14px; min-width: 320px; }
 
 .head-icon { font-size: 24px; color: #f0f0f0; min-width: 28px; }
 .head-icon.charging { color: #8ec07c; }
@@ -159,80 +129,15 @@ def battery_path():
     return None
 
 
-def hyprctl_json(*args):
-    out = subprocess.run(["hyprctl", *args, "-j"], capture_output=True, text=True, timeout=2).stdout
-    return json.loads(out)
-
-
-def panel_right_margin():
-    """Distance from the screen's right edge to where the panel should end."""
-    try:
-        cur = hyprctl_json("cursorpos")
-        for m in hyprctl_json("monitors"):
-            w, h = m["width"], m["height"]
-            if m["transform"] % 2:  # rotated 90/270
-                w, h = h, w
-            lw, lh = w / m["scale"], h / m["scale"]
-            if m["x"] <= cur["x"] < m["x"] + lw and m["y"] <= cur["y"] < m["y"] + lh:
-                return max(EDGE_GAP, int(m["x"] + lw - cur["x"] - CURSOR_OFFSET))
-    except (OSError, ValueError, KeyError, subprocess.TimeoutExpired):
-        pass
-    return FALLBACK_MARGIN_RIGHT
-
-
-def label(text, *classes, xalign=0.0):
-    w = Gtk.Label(label=text, xalign=xalign)
-    for c in classes:
-        w.get_style_context().add_class(c)
-    return w
-
-
-class Popup(Gtk.Window):
-    """Transparent full-screen overlay holding the panel; clicking anywhere
-    outside the panel (including the bar) closes it, like the other popups."""
+class BatteryPopup(Popup):
+    NAME = "battery"
 
     def __init__(self):
-        super().__init__()
-        visual = self.get_screen().get_rgba_visual()
-        if visual:
-            self.set_visual(visual)
-        self.set_app_paintable(True)
-
-        GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_namespace(self, "waybar-battery-popup")
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
-        for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
-                     GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
-            GtkLayerShell.set_anchor(self, edge, True)
-        GtkLayerShell.set_exclusive_zone(self, -1)
-        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
-
+        super().__init__(cursor_offset=CURSOR_OFFSET, fallback_margin=FALLBACK_MARGIN_RIGHT)
         self.battery = battery_path()
         self.status = ""
         self.signature = None
         self.refresh_id = None
-
-        self.panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        self.panel.set_name("panel")
-
-        panel_box = Gtk.EventBox()
-        panel_box.set_visible_window(False)
-        panel_box.add(self.panel)
-        panel_box.connect("button-press-event", lambda *_: True)
-        panel_box.set_halign(Gtk.Align.END)
-        panel_box.set_valign(Gtk.Align.START)
-        panel_box.set_margin_top(MARGIN_TOP)
-        panel_box.set_margin_end(panel_right_margin())
-
-        catcher = Gtk.EventBox()
-        catcher.set_name("catcher")
-        catcher.set_visible_window(False)
-        catcher.add(panel_box)
-        catcher.connect("button-press-event", lambda *_: Gtk.main_quit())
-        self.add(catcher)
-
-        self.connect("key-press-event", self.on_key)
-        self.connect("destroy", Gtk.main_quit)
 
         # Profile switches (from here, powerprofilesctl or anything else) and
         # charge/plug changes arrive as PropertiesChanged signals
@@ -351,15 +256,17 @@ class Popup(Gtk.Window):
         parts = [STATE_TEXT.get(state, "Battery")]
         if state == CHARGING:
             left = fmt_duration(st["to_full"])
-            parts.append(f"{left} to full" if left else None)
+            if left:
+                parts.append(f"{left} to full")
         elif state == DISCHARGING:
             left = fmt_duration(st["to_empty"])
-            parts.append(f"{left} left" if left else None)
+            if left:
+                parts.append(f"{left} left")
         if st["rate"] >= 0.1 and state in (CHARGING, DISCHARGING):
             parts.append(f"{st['rate']:.1f} W")
         text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         text.pack_start(label("Battery", "title"), False, False, 0)
-        text.pack_start(label(" \u00b7 ".join(p for p in parts if p), "sub"), False, False, 0)
+        text.pack_start(label(" \u00b7 ".join(parts), "sub"), False, False, 0)
         row.pack_start(text, True, True, 0)
         row.pack_start(label(f"{pct}%", "pct", xalign=1.0), False, False, 0)
         return row
@@ -412,46 +319,6 @@ class Popup(Gtk.Window):
                  GLib.Variant("(ssv)", (PPD, "ActiveProfile", GLib.Variant("s", profile))),
                  None, Gio.DBusCallFlags.NONE, 5000, None, done)
 
-    def on_key(self, _w, event):
-        if event.keyval == Gdk.KEY_Escape:
-            Gtk.main_quit()
-
-
-def running_pid():
-    try:
-        with open(PID_FILE) as f:
-            pid = int(f.read().strip())
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
-            if b"battery-popup" in f.read():
-                return pid
-    except (OSError, ValueError):
-        pass
-    return None
-
-
-def main():
-    pid = running_pid()
-    if pid:  # already open -> this click closes it
-        os.kill(pid, signal.SIGTERM)
-        return
-
-    with open(PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
-    try:
-        provider = Gtk.CssProvider()
-        provider.load_from_data(CSS)
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, Gtk.main_quit)
-        Popup().show_all()
-        Gtk.main()
-    finally:
-        try:
-            os.remove(PID_FILE)
-        except OSError:
-            pass
-
 
 if __name__ == "__main__":
-    sys.exit(main())
+    run(BatteryPopup, CSS)

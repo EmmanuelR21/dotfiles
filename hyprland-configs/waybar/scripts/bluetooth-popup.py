@@ -1,35 +1,23 @@
 #!/usr/bin/env python3
 """Bluetooth popup for the Waybar bluetooth module.
 
-Running it opens the popup; running it again while it's open closes it, so it
-works directly as a Waybar "on-click" command (same as audio-popup.py).
+Click to open, click again to close (see popup_common.py).
 
 Talks to BlueZ directly over D-Bus through Gio, so it needs nothing beyond
-what the audio popup already uses: python-gobject, gtk3, gtk-layer-shell, and
-bluez itself. While open it registers a pairing agent, so new devices can be
+the other popups' dependencies and bluez itself. While open it registers a pairing agent, so new devices can be
 paired from the "Scan" list without bluetoothctl.
 """
-import json
-import os
-import signal
 import subprocess
-import sys
 
 import gi
+from popup_common import GLib, Gtk, Popup, button, label, run
 
-gi.require_version("Gtk", "3.0")
-gi.require_version("GtkLayerShell", "0.1")
 gi.require_version("Pango", "1.0")
-from gi.repository import GLib, Gtk, Gdk, Gio, GtkLayerShell, Pango  # noqa: E402
+from gi.repository import Gio, Pango
 
-# Panel position. TOP = bar margin (6) + bar height (30) + 4px gap.
-# Horizontally the panel's right edge is placed CURSOR_OFFSET px right of the
-# mouse at click time (via hyprctl), so it lines up under the module no matter
-# how wide the module currently is. FALLBACK is used if hyprctl fails.
-MARGIN_TOP = 40
+# The panel's right edge sits CURSOR_OFFSET px right of the mouse at click time
 CURSOR_OFFSET = 24
 FALLBACK_MARGIN_RIGHT = 160
-EDGE_GAP = 6
 
 MAX_FOUND = 8  # cap on unpaired devices listed while scanning
 
@@ -60,7 +48,6 @@ FRIENDLY_ERRORS = {
     "Already Exists": "already paired",
 }
 
-PID_FILE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "waybar-bluetooth-popup.pid")
 
 AGENT_XML = """
 <node><interface name="org.bluez.Agent1">
@@ -78,23 +65,8 @@ AGENT_XML = """
 
 # BLUE matches #bluetooth in style.css; BLUE_TEXT is a lighter shade for
 # small text so it stays readable on the dark panel.
-CSS = b"""
-* {
-    font-family: "FreeSans", "Symbols Nerd Font";
-    font-weight: bold;
-    font-size: 13px;
-    color: #ffffff;
-}
-window, #catcher { background-color: transparent; }
-
-#panel {
-    background-color: #1e1e1e;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 5px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-    padding: 12px 14px;
-    min-width: 320px;
-}
+CSS = """
+#panel { padding: 12px 14px; min-width: 320px; }
 
 .head-icon { font-size: 22px; color: #3567d0; min-width: 26px; }
 .head-icon.off { color: #45526b; }
@@ -193,64 +165,11 @@ def device_icon(kind):
     return ICON_ON
 
 
-def hyprctl_json(*args):
-    out = subprocess.run(["hyprctl", *args, "-j"], capture_output=True, text=True, timeout=2).stdout
-    return json.loads(out)
-
-
-def panel_right_margin():
-    """Distance from the screen's right edge to where the panel should end."""
-    try:
-        cur = hyprctl_json("cursorpos")
-        for m in hyprctl_json("monitors"):
-            w, h = m["width"], m["height"]
-            if m["transform"] % 2:  # rotated 90/270
-                w, h = h, w
-            lw, lh = w / m["scale"], h / m["scale"]
-            if m["x"] <= cur["x"] < m["x"] + lw and m["y"] <= cur["y"] < m["y"] + lh:
-                return max(EDGE_GAP, int(m["x"] + lw - cur["x"] - CURSOR_OFFSET))
-    except (OSError, ValueError, KeyError, subprocess.TimeoutExpired):
-        pass
-    return FALLBACK_MARGIN_RIGHT
-
-
-def label(text, *classes, xalign=0.0):
-    w = Gtk.Label(label=text, xalign=xalign)
-    for c in classes:
-        w.get_style_context().add_class(c)
-    return w
-
-
-def button(text, on_click, *classes, sensitive=True):
-    b = Gtk.Button(label=text)
-    for c in classes:
-        b.get_style_context().add_class(c)
-    b.set_sensitive(sensitive)
-    b.set_valign(Gtk.Align.CENTER)
-    b.connect("clicked", lambda *_: on_click())
-    return b
-
-
-class Popup(Gtk.Window):
-    """Transparent full-screen overlay holding the panel; clicking anywhere
-    outside the panel (including the bar) closes it, like the audio popup."""
+class BluetoothPopup(Popup):
+    NAME = "bluetooth"
 
     def __init__(self):
-        super().__init__()
-        visual = self.get_screen().get_rgba_visual()
-        if visual:
-            self.set_visual(visual)
-        self.set_app_paintable(True)
-
-        GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_namespace(self, "waybar-bluetooth-popup")
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
-        for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
-                     GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
-            GtkLayerShell.set_anchor(self, edge, True)
-        GtkLayerShell.set_exclusive_zone(self, -1)
-        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
-
+        super().__init__(cursor_offset=CURSOR_OFFSET, fallback_margin=FALLBACK_MARGIN_RIGHT)
         self.adapter = None      # (path, props) of the first adapter
         self.busy = {}           # device path -> label shown while an action runs
         self.pairing = set()     # device paths we started pairing (agent accepts only these)
@@ -259,28 +178,6 @@ class Popup(Gtk.Window):
         self.signature = None
         self.refresh_id = None
         self.agent_ok = False
-
-        self.panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        self.panel.set_name("panel")
-
-        panel_box = Gtk.EventBox()
-        panel_box.set_visible_window(False)
-        panel_box.add(self.panel)
-        panel_box.connect("button-press-event", lambda *_: True)
-        panel_box.set_halign(Gtk.Align.END)
-        panel_box.set_valign(Gtk.Align.START)
-        panel_box.set_margin_top(MARGIN_TOP)
-        panel_box.set_margin_end(panel_right_margin())
-
-        catcher = Gtk.EventBox()
-        catcher.set_name("catcher")
-        catcher.set_visible_window(False)
-        catcher.add(panel_box)
-        catcher.connect("button-press-event", lambda *_: Gtk.main_quit())
-        self.add(catcher)
-
-        self.connect("key-press-event", self.on_key)
-        self.connect("destroy", Gtk.main_quit)
 
         self.register_agent()
         # Any BlueZ signal (property change, device found/removed) -> refresh
@@ -502,7 +399,7 @@ class Popup(Gtk.Window):
     def toggle_power(self):
         path, props = self.adapter
         turn_on = not props.get("Powered")
-        report = lambda err: err and self.set_status(f"Bluetooth: {nice(err)}")  # noqa: E731
+        report = lambda err: err and self.set_status(f"Bluetooth: {nice(err)}")
         if not turn_on:
             self.scanning = False
             set_prop(path, ADAPTER, "Powered", GLib.Variant("b", False), report)
@@ -512,7 +409,8 @@ class Popup(Gtk.Window):
             # Soft rfkill block (airplane mode, laptop switch); /dev/rfkill is
             # writable by the logged-in user, so no sudo needed.
             try:
-                subprocess.run(["rfkill", "unblock", "bluetooth"], capture_output=True, timeout=3)
+                subprocess.run(["rfkill", "unblock", "bluetooth"], capture_output=True, timeout=3,
+                               check=False)
             except (OSError, subprocess.TimeoutExpired):
                 pass
         # Give bluetoothd a moment to notice the unblock before powering on
@@ -559,8 +457,8 @@ class Popup(Gtk.Window):
     def on_agent_call(self, _conn, _sender, _path, _iface, method, params, invocation):
         args = params.unpack()
         ours = bool(args) and args[0] in self.pairing  # only answer pairings we started
-        ok = lambda: invocation.return_value(None)  # noqa: E731
-        reject = lambda: invocation.return_dbus_error("org.bluez.Error.Rejected", "Rejected")  # noqa: E731
+        ok = lambda: invocation.return_value(None)
+        reject = lambda: invocation.return_dbus_error("org.bluez.Error.Rejected", "Rejected")
 
         if method == "RequestConfirmation":
             if not ours:
@@ -596,50 +494,6 @@ class Popup(Gtk.Window):
                 pass
         self.unregister_agent()
 
-    def on_key(self, _w, event):
-        if event.keyval == Gdk.KEY_Escape:
-            Gtk.main_quit()
-
-
-def running_pid():
-    try:
-        with open(PID_FILE) as f:
-            pid = int(f.read().strip())
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
-            if b"bluetooth-popup" in f.read():
-                return pid
-    except (OSError, ValueError):
-        pass
-    return None
-
-
-def main():
-    pid = running_pid()
-    if pid:  # already open -> this click closes it
-        os.kill(pid, signal.SIGTERM)
-        return
-
-    with open(PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
-    popup = None
-    try:
-        provider = Gtk.CssProvider()
-        provider.load_from_data(CSS)
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, Gtk.main_quit)
-        popup = Popup()
-        popup.show_all()
-        Gtk.main()
-    finally:
-        if popup:
-            popup.cleanup()
-        try:
-            os.remove(PID_FILE)
-        except OSError:
-            pass
-
 
 if __name__ == "__main__":
-    sys.exit(main())
+    run(BluetoothPopup, CSS)

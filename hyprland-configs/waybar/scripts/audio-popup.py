@@ -1,30 +1,18 @@
 #!/usr/bin/env python3
 """Speaker/mic popup for the Waybar audio module.
 
-Running it opens the popup; running it again while it's open closes it, so it
-works directly as a Waybar "on-click" command. Volume and mute go through
-wpctl (WirePlumber), the same tool the bar already uses.
-
-Requires: python-gobject (gtk3 and gtk-layer-shell are already Waybar deps).
+Click to open, click again to close (see popup_common.py). Volume and mute
+go through wpctl (WirePlumber), the same tool the bar already uses.
 """
 import os
-import signal
 import subprocess
-import sys
 
-import gi
+from popup_common import GLib, Gtk, Popup, label, run, set_class
 
-gi.require_version("Gtk", "3.0")
-gi.require_version("GtkLayerShell", "0.1")
-from gi.repository import GLib, Gtk, Gdk, GtkLayerShell  # noqa: E402
-
-# Position, measured from the screen's top-right corner (logical pixels).
-# TOP = bar margin (6) + bar height (30) + 4px gap.
 # RIGHT = distance to the audio module's right edge: bar margin (6) +
 # power (~34) + network (~38) + 6px spacing each. The battery module only shows
 # on machines with a battery, so its width is added when one exists.
 # Fine-tune these if the panel doesn't line up exactly under the module.
-MARGIN_TOP = 40
 MARGIN_RIGHT = 90
 BATTERY_WIDTH = 76  # battery module (~70) + spacing (6)
 
@@ -46,24 +34,8 @@ ICONS = {
 }
 TARGETS = {"sink": "@DEFAULT_AUDIO_SINK@", "source": "@DEFAULT_AUDIO_SOURCE@"}
 
-PID_FILE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "waybar-audio-popup.pid")
-
-CSS = b"""
-* {
-    font-family: "FreeSans", "Symbols Nerd Font";
-    font-weight: bold;
-    font-size: 13px;
-    color: #ffffff;
-}
-window, #catcher { background-color: transparent; }
-
-#panel {
-    background-color: #1e1e1e;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 5px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-    padding: 10px 14px;
-}
+CSS = """
+#panel { padding: 10px 14px; }
 
 .icon  { font-size: 17px; color: #d6dde9; min-width: 22px; }
 .name  { min-width: 58px; }
@@ -120,7 +92,7 @@ button:hover { background-color: #333333; }
 
 def wpctl(*args):
     try:
-        return subprocess.run(["wpctl", *args], capture_output=True, text=True, timeout=2).stdout
+        return subprocess.run(["wpctl", *args], capture_output=True, text=True, timeout=2, check=False).stdout
     except (OSError, subprocess.TimeoutExpired):
         return ""
 
@@ -136,17 +108,15 @@ def read_state(kind):
 
 
 class Row(Gtk.Box):
-    def __init__(self, kind, label):
+    def __init__(self, kind, text):
         super().__init__(spacing=8)
         self.kind = kind
         self.updating = False   # set while we move the slider ourselves
         self.dragging = False
         self.pending = None
 
-        self.icon = Gtk.Label(xalign=0)
-        self.icon.get_style_context().add_class("icon")
-        name = Gtk.Label(label=label, xalign=0)
-        name.get_style_context().add_class("name")
+        self.icon = label("", "icon")
+        name = label(text, "name")
 
         self.scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self.scale.set_draw_value(False)
@@ -155,8 +125,7 @@ class Row(Gtk.Box):
         self.scale.connect("button-press-event", lambda *_: self._set_drag(True))
         self.scale.connect("button-release-event", lambda *_: self._set_drag(False))
 
-        self.pct = Gtk.Label(xalign=1)
-        self.pct.get_style_context().add_class("pct")
+        self.pct = label("", "pct", xalign=1)
 
         self.button = Gtk.Button()
         self.button.connect("clicked", self.on_mute)
@@ -179,8 +148,7 @@ class Row(Gtk.Box):
         self.pct.set_text(f"{vol}%")
         self.icon.set_text(ICONS[self.kind][1 if muted else 0])
         self.button.set_label("Unmute" if muted else "Mute")
-        ctx = self.get_style_context()
-        (ctx.add_class if muted else ctx.remove_class)("muted")
+        set_class(self, "muted", muted)
 
     def on_slide(self, scale):
         if self.updating:
@@ -202,56 +170,15 @@ class Row(Gtk.Box):
         self.refresh()
 
 
-class Popup(Gtk.Window):
-    """A transparent full-screen overlay holding the panel in the top-right.
-
-    Any click that lands on the overlay (i.e. anywhere outside the panel,
-    including the bar itself) closes the popup, so clicking out always works.
-    """
+class AudioPopup(Popup):
+    NAME = "audio"
 
     def __init__(self):
-        super().__init__()
-        visual = self.get_screen().get_rgba_visual()
-        if visual:
-            self.set_visual(visual)
-        self.set_app_paintable(True)
-
-        GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_namespace(self, "waybar-audio-popup")
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
-        for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
-                     GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
-            GtkLayerShell.set_anchor(self, edge, True)
-        # -1: ignore the bar's reserved space, so margins count from the screen edge
-        GtkLayerShell.set_exclusive_zone(self, -1)
-        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
-
-        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        panel.set_name("panel")
+        super().__init__(spacing=10,
+                         margin_end=MARGIN_RIGHT + (BATTERY_WIDTH if has_battery() else 0))
         self.rows = [Row("sink", "Speaker"), Row("source", "Mic")]
         for r in self.rows:
-            panel.pack_start(r, False, False, 0)
-
-        # Clicks inside the panel (padding, labels) are swallowed here so they
-        # don't reach the overlay and close it. Sliders/buttons handle their own.
-        panel_box = Gtk.EventBox()
-        panel_box.set_visible_window(False)
-        panel_box.add(panel)
-        panel_box.connect("button-press-event", lambda *_: True)
-        panel_box.set_halign(Gtk.Align.END)
-        panel_box.set_valign(Gtk.Align.START)
-        panel_box.set_margin_top(MARGIN_TOP)
-        panel_box.set_margin_end(MARGIN_RIGHT + (BATTERY_WIDTH if has_battery() else 0))
-
-        catcher = Gtk.EventBox()
-        catcher.set_name("catcher")
-        catcher.set_visible_window(False)
-        catcher.add(panel_box)
-        catcher.connect("button-press-event", lambda *_: Gtk.main_quit())
-        self.add(catcher)
-
-        self.connect("key-press-event", self.on_key)
-        self.connect("destroy", Gtk.main_quit)
+            self.panel.pack_start(r, False, False, 0)
         GLib.timeout_add(POLL_MS, self.poll)
 
     def poll(self):
@@ -259,46 +186,6 @@ class Popup(Gtk.Window):
             r.refresh()
         return True
 
-    def on_key(self, _w, event):
-        if event.keyval == Gdk.KEY_Escape:
-            Gtk.main_quit()
-
-
-def running_pid():
-    try:
-        with open(PID_FILE) as f:
-            pid = int(f.read().strip())
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
-            if b"audio-popup" in f.read():
-                return pid
-    except (OSError, ValueError):
-        pass
-    return None
-
-
-def main():
-    pid = running_pid()
-    if pid:  # already open -> this click closes it
-        os.kill(pid, signal.SIGTERM)
-        return
-
-    with open(PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
-    try:
-        provider = Gtk.CssProvider()
-        provider.load_from_data(CSS)
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, Gtk.main_quit)
-        Popup().show_all()
-        Gtk.main()
-    finally:
-        try:
-            os.remove(PID_FILE)
-        except OSError:
-            pass
-
 
 if __name__ == "__main__":
-    sys.exit(main())
+    run(AudioPopup, CSS)

@@ -44,21 +44,13 @@
       "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
     },
   },
+  // Click opens scripts/calendar-popup.py (month calendar, today highlighted)
   "clock": {
     "interval": 60,
-    "tooltip": true,
+    "tooltip": false,
+    "on-click": "$HOME/.config/waybar/scripts/calendar-popup.py",
     "format": "<span color='#d6dde9'></span> <span color='#ffffff'>{0:%A, %B %d}</span> <span color='#555555'>|</span> <span color='#d6dde9'></span> <span color='#ffffff' size='larger'>{0:%I:%M %p}</span> ",
     "locale": "en_US.UTF-8",
-    "tooltip-format": "<tt>{calendar}</tt>",
-    "calendar": {
-      "format": {
-        "months": "<span color='#ffead3'><b>{}</b></span>",
-        "days": "<span color='#ecc6d9'><b>{}</b></span>",
-        "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
-        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
-        "today": "<span color='#ffcc66'><b>{}</b></span>",
-      },
-    },
   },
   "group/audio": {
     "orientation": "inherit",

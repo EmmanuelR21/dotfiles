@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Brightness + night light popup for the Waybar hyprsunset module.
 
-Running it opens the popup; running it again while it's open closes it, so it
-works directly as a Waybar "on-click" command (same as the other popups).
+Click to open, click again to close (see popup_common.py).
 
 Brightness, first available backend wins (so one config fits laptop and PC):
   1. A backlight (laptop): the real panel backlight via brightnessctl, using
@@ -20,48 +19,36 @@ color transform to apply. The popup itself polls nothing but the backlight
 sysfs file, and only while it's open (ddcutil is only called on open and on
 slider changes).
 
-Requires: hyprsunset, python-gobject, gtk3, gtk-layer-shell;
-brightnessctl (laptop) or ddcutil (desktop) for hardware brightness.
+Requires: hyprsunset; brightnessctl (laptop) or ddcutil (desktop) for
+hardware brightness.
 """
 import json
 import os
 import shutil
-import signal
 import socket
 import subprocess
-import sys
 import threading
 import time
 
-import gi
+from popup_common import RUNTIME, GLib, Gtk, Popup, label, run, set_class
 
-gi.require_version("Gtk", "3.0")
-gi.require_version("GtkLayerShell", "0.1")
-from gi.repository import GLib, Gtk, Gdk, GtkLayerShell  # noqa: E402
-
-# Panel position. TOP = bar margin (6) + bar height (30) + 4px gap.
-# Horizontally the panel's right edge is placed CURSOR_OFFSET px right of the
-# mouse at click time (via hyprctl), so it lines up under the module no matter
-# how wide the modules to its right are. FALLBACK is used if hyprctl fails.
-MARGIN_TOP = 40
+# The panel's right edge sits CURSOR_OFFSET px right of the mouse at click time
 CURSOR_OFFSET = 24
 FALLBACK_MARGIN_RIGHT = 250
-EDGE_GAP = 6
 
 # Picks up brightness-key changes while open (sysfs read, no subprocess)
 POLL_MS = 2000
 
-# Night light strength 0..100 maps linearly onto these color temperatures
-TEMP_WEAK, TEMP_STRONG = 6500, 2500
-DEFAULT_STRENGTH = 60  # ~4100K
+# Night light strength 0..100 maps linearly onto these color temperatures.
+# 1000K is the warmest hyprsunset accepts.
+TEMP_WEAK, TEMP_STRONG = 6500, 1000
+DEFAULT_STRENGTH = 44  # ~4100K
 SOFT_MIN = 20  # lowest software brightness, so the screen can't go black
 
 ICON_BRIGHT = ("\U000f00de", "\U000f00df", "\U000f00e0")  # low, mid, high
 ICON_NIGHT = "\U000f0594"
 ICON_TEMP = "\U000f050f"
 
-RUNTIME = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
-PID_FILE = os.path.join(RUNTIME, "waybar-hyprsunset-popup.pid")
 # Detected DDC buses; the runtime dir is cleared on reboot, when bus numbers may change
 DDC_CACHE = os.path.join(RUNTIME, "waybar-ddc-buses.json")
 _HIS = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
@@ -69,23 +56,8 @@ SOCK = os.path.join(RUNTIME, "hypr", _HIS or "", ".hyprsunset.sock")
 STATE_FILE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")),
                           "waybar-hyprsunset.json")
 
-CSS = b"""
-* {
-    font-family: "FreeSans", "Symbols Nerd Font";
-    font-weight: bold;
-    font-size: 13px;
-    color: #ffffff;
-}
-window, #catcher { background-color: transparent; }
-
-#panel {
-    background-color: #1e1e1e;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 5px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-    padding: 12px 14px;
-    min-width: 300px;
-}
+CSS = """
+#panel { padding: 12px 14px; min-width: 300px; }
 
 .icon { font-size: 17px; color: #fabd2f; min-width: 22px; }
 .name { min-width: 76px; }
@@ -143,34 +115,6 @@ button:hover { background-color: #333333; }
 
 
 # ---------------------------------------------------------------- helpers
-
-def label(text, *classes, xalign=0.0):
-    w = Gtk.Label(label=text, xalign=xalign)
-    for c in classes:
-        w.get_style_context().add_class(c)
-    return w
-
-
-def hyprctl_json(*args):
-    out = subprocess.run(["hyprctl", *args, "-j"], capture_output=True, text=True, timeout=2).stdout
-    return json.loads(out)
-
-
-def panel_right_margin():
-    """Distance from the screen's right edge to where the panel should end."""
-    try:
-        cur = hyprctl_json("cursorpos")
-        for m in hyprctl_json("monitors"):
-            w, h = m["width"], m["height"]
-            if m["transform"] % 2:  # rotated 90/270
-                w, h = h, w
-            lw, lh = w / m["scale"], h / m["scale"]
-            if m["x"] <= cur["x"] < m["x"] + lw and m["y"] <= cur["y"] < m["y"] + lh:
-                return max(EDGE_GAP, int(m["x"] + lw - cur["x"] - CURSOR_OFFSET))
-    except (OSError, ValueError, KeyError, subprocess.TimeoutExpired):
-        pass
-    return FALLBACK_MARGIN_RIGHT
-
 
 def strength_to_temp(s):
     return round(TEMP_WEAK - (TEMP_WEAK - TEMP_STRONG) * s / 100)
@@ -238,7 +182,7 @@ class Hyprsunset:
         if not (self.night or self.gamma < 100):
             if self.running:
                 # Exiting drops hyprsunset's color transform entirely
-                subprocess.run(["pkill", "-x", "hyprsunset"])
+                subprocess.run(["pkill", "-x", "hyprsunset"], check=False)
                 self.running = False
             return
         if self.running and ipc(f"gamma {self.gamma}") is not None:
@@ -282,7 +226,7 @@ class Backlight:
     def set(self, pct):
         try:
             subprocess.run(["brightnessctl", "-q", "-d", self.name, "-e4", "-n2", "set", f"{pct}%"],
-                           timeout=2)
+                           timeout=2, check=False)
         except (OSError, subprocess.TimeoutExpired):
             pass
 
@@ -297,7 +241,8 @@ def find_backlight():
 
 def ddcutil(*args, timeout=5):
     try:
-        r = subprocess.run(["ddcutil", *args], capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run(["ddcutil", *args], capture_output=True, text=True, timeout=timeout,
+                           check=False)
         return r.stdout if r.returncode == 0 else None
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -446,35 +391,15 @@ class SliderRow(Gtk.Box):
             self._apply()
 
 
-class Popup(Gtk.Window):
-    """A transparent full-screen overlay holding the panel under the module.
-
-    Any click that lands on the overlay (i.e. anywhere outside the panel,
-    including the bar itself) closes the popup, so clicking out always works.
-    """
+class HyprsunsetPopup(Popup):
+    NAME = "hyprsunset"
 
     def __init__(self):
-        super().__init__()
-        visual = self.get_screen().get_rgba_visual()
-        if visual:
-            self.set_visual(visual)
-        self.set_app_paintable(True)
-
-        GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_namespace(self, "waybar-hyprsunset-popup")
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
-        for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
-                     GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
-            GtkLayerShell.set_anchor(self, edge, True)
-        GtkLayerShell.set_exclusive_zone(self, -1)
-        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
-
+        super().__init__(spacing=10, cursor_offset=CURSOR_OFFSET,
+                         fallback_margin=FALLBACK_MARGIN_RIGHT)
         self.sunset = Hyprsunset()
         self.backlight = find_backlight()
         self.ddc = None
-
-        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        panel.set_name("panel")
 
         # Brightness
         self.bright = SliderRow(
@@ -491,9 +416,9 @@ class Popup(Gtk.Window):
             self.ddc = DDC(self.on_ddc_ready)
         else:
             self.use_software_dimming()
-        panel.pack_start(self.bright, False, False, 0)
+        self.panel.pack_start(self.bright, False, False, 0)
 
-        panel.pack_start(Gtk.Separator(), False, False, 0)
+        self.panel.pack_start(Gtk.Separator(), False, False, 0)
 
         # Night light
         self.night_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -513,28 +438,9 @@ class Popup(Gtk.Window):
                                   lambda v: f"{strength_to_temp(v)}K", self.on_strength)
         self.strength.set(self.sunset.strength)
         self.night_box.pack_start(self.strength, False, False, 0)
-        panel.pack_start(self.night_box, False, False, 0)
+        self.panel.pack_start(self.night_box, False, False, 0)
         self.refresh_night()
 
-        # Clicks inside the panel are swallowed so they don't close it
-        panel_box = Gtk.EventBox()
-        panel_box.set_visible_window(False)
-        panel_box.add(panel)
-        panel_box.connect("button-press-event", lambda *_: True)
-        panel_box.set_halign(Gtk.Align.END)
-        panel_box.set_valign(Gtk.Align.START)
-        panel_box.set_margin_top(MARGIN_TOP)
-        panel_box.set_margin_end(panel_right_margin())
-
-        catcher = Gtk.EventBox()
-        catcher.set_name("catcher")
-        catcher.set_visible_window(False)
-        catcher.add(panel_box)
-        catcher.connect("button-press-event", lambda *_: Gtk.main_quit())
-        self.add(catcher)
-
-        self.connect("key-press-event", self.on_key)
-        self.connect("destroy", Gtk.main_quit)
         if self.backlight:
             GLib.timeout_add(POLL_MS, self.poll)
 
@@ -542,9 +448,8 @@ class Popup(Gtk.Window):
         on = self.sunset.night
         self.toggle.set_label("Turn off" if on else "Turn on")
         self.state.set_text(f"{self.sunset.temp}K" if on else "Off")
-        ctx = self.night_box.get_style_context()
-        ctx.add_class("on" if on else "off")
-        ctx.remove_class("off" if on else "on")
+        set_class(self.night_box, "on", on)
+        set_class(self.night_box, "off", not on)
 
     def use_software_dimming(self):
         self.bright.scale.set_range(SOFT_MIN, 100)
@@ -585,56 +490,13 @@ class Popup(Gtk.Window):
         self.bright.set(self.backlight.get())
         return True
 
-    def on_key(self, _w, event):
-        if event.keyval == Gdk.KEY_Escape:
-            Gtk.main_quit()
-
-
-def running_pid():
-    try:
-        with open(PID_FILE) as f:
-            pid = int(f.read().strip())
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
-            if b"hyprsunset-popup" in f.read():
-                return pid
-    except (OSError, ValueError):
-        pass
-    return None
-
-
-def main():
-    pid = running_pid()
-    if pid:  # already open -> this click closes it
-        os.kill(pid, signal.SIGTERM)
-        return
-
-    with open(PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
-    popup = None
-    try:
-        provider = Gtk.CssProvider()
-        provider.load_from_data(CSS)
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, Gtk.main_quit)
-        popup = Popup()
-        popup.show_all()
-        Gtk.main()
-    finally:
-        if popup:
-            popup.bright.flush()
-            popup.strength.flush()
-            save_state(popup.sunset.strength)
-            popup.hide()
-            Gdk.Display.get_default().flush()
-        try:
-            os.remove(PID_FILE)
-        except OSError:
-            pass
-        if popup and popup.ddc:
-            popup.ddc.close()  # waits for the last brightness value to be sent
+    def cleanup(self):
+        self.bright.flush()
+        self.strength.flush()
+        save_state(self.sunset.strength)
+        if self.ddc:
+            self.ddc.close()  # waits for the last brightness value to be sent
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    run(HyprsunsetPopup, CSS)

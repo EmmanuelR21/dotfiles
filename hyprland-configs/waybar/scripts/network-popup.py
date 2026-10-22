@@ -1,37 +1,22 @@
 #!/usr/bin/env python3
 """Wi-Fi / network popup for the Waybar network module.
 
-Running it opens the popup; running it again while it's open closes it, so it
-works directly as a Waybar "on-click" command (same as the audio and
-bluetooth popups).
+Click to open, click again to close (see popup_common.py).
 
-Talks to NetworkManager through libnm, so it needs nothing beyond what's
-already installed: networkmanager (ships libnm), python-gobject, gtk3 and
-gtk-layer-shell. Passwords go straight to NetworkManager over D-Bus, never
+Talks to NetworkManager through libnm, so it needs nothing beyond the other
+popups' dependencies and networkmanager (which ships libnm). Passwords go straight to NetworkManager over D-Bus, never
 on a command line.
 """
-import json
-import os
-import signal
-import subprocess
-import sys
-
 import gi
+from popup_common import Gdk, GLib, Gtk, Popup, button, label, run
 
-gi.require_version("Gtk", "3.0")
-gi.require_version("GtkLayerShell", "0.1")
 gi.require_version("NM", "1.0")
 gi.require_version("Pango", "1.0")
-from gi.repository import GLib, Gtk, Gdk, GtkLayerShell, NM, Pango  # noqa: E402
+from gi.repository import NM, Pango
 
-# Panel position. TOP = bar margin (6) + bar height (30) + 4px gap.
-# Horizontally the panel's right edge is placed CURSOR_OFFSET px right of the
-# mouse at click time (via hyprctl), so it lines up under the module no matter
-# where the module sits. FALLBACK is used if hyprctl fails.
-MARGIN_TOP = 40
+# The panel's right edge sits CURSOR_OFFSET px right of the mouse at click time
 CURSOR_OFFSET = 24
 FALLBACK_MARGIN_RIGHT = 60
-EDGE_GAP = 6
 
 MAX_NETWORKS = 10
 POLL_MS = 1000  # also the traffic strip's sample rate
@@ -60,27 +45,12 @@ EAP_METHODS = [("PEAP \u00b7 MSCHAPv2", "peap", "mschapv2"),
                ("TTLS \u00b7 PAP", "ttls", "pap"),
                ("TTLS \u00b7 MSCHAPv2", "ttls", "mschapv2")]
 
-PID_FILE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "waybar-network-popup.pid")
+
 
 # #fe8019 matches #network in style.css; #ffa55c (its hover shade) is used
 # for small text so it stays readable on the dark panel.
-CSS = b"""
-* {
-    font-family: "FreeSans", "Symbols Nerd Font";
-    font-weight: bold;
-    font-size: 13px;
-    color: #ffffff;
-}
-window, #catcher { background-color: transparent; }
-
-#panel {
-    background-color: #1e1e1e;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 5px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-    padding: 12px 14px;
-    min-width: 340px;
-}
+CSS = """
+#panel { padding: 12px 14px; min-width: 340px; }
 
 .head-icon { font-size: 22px; color: #fe8019; min-width: 26px; }
 .head-icon.off { color: #7c6f64; }
@@ -185,44 +155,6 @@ def ip4_of(device):
     return addrs[0].get_address() if addrs else None
 
 
-def hyprctl_json(*args):
-    out = subprocess.run(["hyprctl", *args, "-j"], capture_output=True, text=True, timeout=2).stdout
-    return json.loads(out)
-
-
-def panel_right_margin():
-    """Distance from the screen's right edge to where the panel should end."""
-    try:
-        cur = hyprctl_json("cursorpos")
-        for m in hyprctl_json("monitors"):
-            w, h = m["width"], m["height"]
-            if m["transform"] % 2:  # rotated 90/270
-                w, h = h, w
-            lw, lh = w / m["scale"], h / m["scale"]
-            if m["x"] <= cur["x"] < m["x"] + lw and m["y"] <= cur["y"] < m["y"] + lh:
-                return max(EDGE_GAP, int(m["x"] + lw - cur["x"] - CURSOR_OFFSET))
-    except (OSError, ValueError, KeyError, subprocess.TimeoutExpired):
-        pass
-    return FALLBACK_MARGIN_RIGHT
-
-
-def label(text, *classes, xalign=0.0):
-    w = Gtk.Label(label=text, xalign=xalign)
-    for c in classes:
-        w.get_style_context().add_class(c)
-    return w
-
-
-def button(text, on_click, *classes, sensitive=True):
-    b = Gtk.Button(label=text)
-    for c in classes:
-        b.get_style_context().add_class(c)
-    b.set_sensitive(sensitive)
-    b.set_valign(Gtk.Align.CENTER)
-    b.connect("clicked", lambda *_: on_click())
-    return b
-
-
 class Traffic:
     """Down/up byte rates for one interface, from /sys/class/net counters."""
 
@@ -233,7 +165,7 @@ class Traffic:
     def reset(self):
         self.last = None
         self.rates = 0  # samples that produced a rate (needs two readings)
-        self.hist = ([0] * TRAFFIC_SAMPLES, [0] * TRAFFIC_SAMPLES)
+        self.hist = ([0.0] * TRAFFIC_SAMPLES, [0.0] * TRAFFIC_SAMPLES)
 
     def follow(self, iface):
         if iface != self.iface:  # switched networks: start the graph fresh
@@ -278,26 +210,11 @@ def sparkline(hist):
     return "".join(SPARK[min(len(SPARK) - 1, int(v / top * len(SPARK)))] for v in hist)
 
 
-class Popup(Gtk.Window):
-    """Transparent full-screen overlay holding the panel; clicking anywhere
-    outside the panel (including the bar) closes it, like the other popups."""
+class NetworkPopup(Popup):
+    NAME = "network"
 
     def __init__(self):
-        super().__init__()
-        visual = self.get_screen().get_rgba_visual()
-        if visual:
-            self.set_visual(visual)
-        self.set_app_paintable(True)
-
-        GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_namespace(self, "waybar-network-popup")
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
-        for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
-                     GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
-            GtkLayerShell.set_anchor(self, edge, True)
-        GtkLayerShell.set_exclusive_zone(self, -1)
-        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
-
+        super().__init__(cursor_offset=CURSOR_OFFSET, fallback_margin=FALLBACK_MARGIN_RIGHT)
         self.client = NM.Client.new(None)
         self.wifi = None          # NM.DeviceWifi, if the machine has one
         self.busy = {}            # ssid -> label shown while an action runs
@@ -309,28 +226,6 @@ class Popup(Gtk.Window):
         self.signature = None
         self.traffic = Traffic()
         self.traffic_widgets = None  # (down, up) labels of the strip, if shown
-
-        self.panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        self.panel.set_name("panel")
-
-        panel_box = Gtk.EventBox()
-        panel_box.set_visible_window(False)
-        panel_box.add(self.panel)
-        panel_box.connect("button-press-event", lambda *_: True)
-        panel_box.set_halign(Gtk.Align.END)
-        panel_box.set_valign(Gtk.Align.START)
-        panel_box.set_margin_top(MARGIN_TOP)
-        panel_box.set_margin_end(panel_right_margin())
-
-        catcher = Gtk.EventBox()
-        catcher.set_name("catcher")
-        catcher.set_visible_window(False)
-        catcher.add(panel_box)
-        catcher.connect("button-press-event", lambda *_: Gtk.main_quit())
-        self.add(catcher)
-
-        self.connect("key-press-event", self.on_key)
-        self.connect("destroy", Gtk.main_quit)
 
         # libnm keeps its objects up to date on its own; this just redraws
         # when something changed (the signature check skips no-op rebuilds)
@@ -831,41 +726,5 @@ class Popup(Gtk.Window):
         return True
 
 
-def running_pid():
-    try:
-        with open(PID_FILE) as f:
-            pid = int(f.read().strip())
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
-            if b"network-popup" in f.read():
-                return pid
-    except (OSError, ValueError):
-        pass
-    return None
-
-
-def main():
-    pid = running_pid()
-    if pid:  # already open -> this click closes it
-        os.kill(pid, signal.SIGTERM)
-        return
-
-    with open(PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
-    try:
-        provider = Gtk.CssProvider()
-        provider.load_from_data(CSS)
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, Gtk.main_quit)
-        Popup().show_all()
-        Gtk.main()
-    finally:
-        try:
-            os.remove(PID_FILE)
-        except OSError:
-            pass
-
-
 if __name__ == "__main__":
-    sys.exit(main())
+    run(NetworkPopup, CSS)
