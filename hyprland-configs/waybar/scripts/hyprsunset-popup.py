@@ -11,12 +11,16 @@ Brightness, first available backend wins (so one config fits laptop and PC):
      runs in a background thread that only ever sends the latest value.
   3. Neither: software dimming through hyprsunset's gamma.
 
+Keyboard backlight: only shown when a */kbd_backlight LED exists (laptops), so
+it simply doesn't appear on a desktop. Uses the LED's own levels (often just
+off / low / high) and brightnessctl to set them.
+
 Night light: hyprsunset color temperature, adjusted live over its IPC socket.
 
 Battery: hyprsunset only runs while it's doing something (night light on, or
 software dimming below 100%); otherwise it's stopped so the compositor has no
 color transform to apply. The popup itself polls nothing but the backlight
-sysfs file, and only while it's open (ddcutil is only called on open and on
+sysfs files, and only while it's open (ddcutil is only called on open and on
 slider changes).
 
 Requires: hyprsunset; brightnessctl (laptop) or ddcutil (desktop) for
@@ -36,7 +40,7 @@ from popup_common import RUNTIME, GLib, Gtk, Popup, label, run, set_class
 CURSOR_OFFSET = 24
 FALLBACK_MARGIN_RIGHT = 250
 
-# Picks up brightness-key changes while open (sysfs read, no subprocess)
+# Picks up brightness-key changes (screen and keyboard) while open (sysfs read, no subprocess)
 POLL_MS = 2000
 
 # Night light strength 0..100 maps linearly onto these color temperatures.
@@ -46,6 +50,7 @@ DEFAULT_STRENGTH = 44  # ~4100K
 SOFT_MIN = 20  # lowest software brightness, so the screen can't go black
 
 ICON_BRIGHT = ("\U000f00de", "\U000f00df", "\U000f00e0")  # low, mid, high
+ICON_KBD = "\U000f030c"  # nf-md-keyboard
 ICON_NIGHT = "\U000f0594"
 ICON_TEMP = "\U000f050f"
 
@@ -88,6 +93,13 @@ scale slider {
     box-shadow: none;
     background-image: none;
     background-color: #ffffff;
+}
+
+/* Level ticks (keyboard backlight slider) */
+scale marks indicator {
+    min-width: 2px;
+    min-height: 4px;
+    background-color: #555555;
 }
 
 button {
@@ -235,6 +247,46 @@ def find_backlight():
     try:
         names = sorted(os.listdir("/sys/class/backlight"))
         return Backlight(names[0]) if names else None
+    except (OSError, ValueError):
+        return None
+
+
+class KbdBacklight:
+    """Keyboard backlight LED, in its raw levels (0..max)."""
+
+    def __init__(self, name):
+        self.name = name
+        self.path = f"/sys/class/leds/{name}"
+        with open(f"{self.path}/max_brightness") as f:
+            self.max = max(1, int(f.read()))
+
+    def get(self):
+        try:
+            with open(f"{self.path}/brightness") as f:
+                return min(self.max, max(0, int(f.read())))
+        except (OSError, ValueError):
+            return 0
+
+    def set(self, level):
+        try:
+            subprocess.run(["brightnessctl", "-q", "-d", self.name, "set", str(level)],
+                           timeout=2, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+    def describe(self, level):
+        if level == 0:
+            return "Off"
+        if self.max == 2:
+            return "Low" if level == 1 else "High"
+        return f"{round(100 * level / self.max)}%"
+
+
+def find_kbd_backlight():
+    """None on machines without one (desktops), so the row is never added."""
+    try:
+        names = sorted(n for n in os.listdir("/sys/class/leds") if n.endswith("::kbd_backlight"))
+        return KbdBacklight(names[0]) if names else None
     except (OSError, ValueError):
         return None
 
@@ -418,6 +470,22 @@ class HyprsunsetPopup(Popup):
             self.use_software_dimming()
         self.panel.pack_start(self.bright, False, False, 0)
 
+        # Keyboard backlight (laptops only)
+        self.kbd = find_kbd_backlight()
+        self.kbd_row = None
+        if self.kbd:
+            self.kbd_row = SliderRow(ICON_KBD, "Keyboard", 0, self.kbd.max,
+                                     self.kbd.describe, self.kbd.set)
+            # The LED only has a few levels: the knob jumps between them
+            # (drag or click), with a tick under each one
+            scale = self.kbd_row.scale
+            scale.set_digits(0)
+            scale.connect("change-value", self.on_kbd_snap)
+            for level in range(self.kbd.max + 1):
+                scale.add_mark(level, Gtk.PositionType.BOTTOM, None)
+            self.kbd_row.set(self.kbd.get())
+            self.panel.pack_start(self.kbd_row, False, False, 0)
+
         self.panel.pack_start(Gtk.Separator(), False, False, 0)
 
         # Night light
@@ -441,7 +509,7 @@ class HyprsunsetPopup(Popup):
         self.panel.pack_start(self.night_box, False, False, 0)
         self.refresh_night()
 
-        if self.backlight:
+        if self.backlight or self.kbd:
             GLib.timeout_add(POLL_MS, self.poll)
 
     def refresh_night(self):
@@ -474,6 +542,12 @@ class HyprsunsetPopup(Popup):
             self.sunset.gamma = v
             self.sunset.apply()
 
+    def on_kbd_snap(self, scale, _scroll, value):
+        level = int(min(self.kbd.max, max(0, round(value))))
+        if level != int(scale.get_value()):
+            scale.set_value(level)
+        return True  # skip GTK's own in-between positioning
+
     def on_toggle(self, _button):
         self.sunset.night = not self.sunset.night
         self.sunset.apply()
@@ -487,11 +561,16 @@ class HyprsunsetPopup(Popup):
             self.sunset.apply()
 
     def poll(self):
-        self.bright.set(self.backlight.get())
+        if self.backlight:
+            self.bright.set(self.backlight.get())
+        if self.kbd:
+            self.kbd_row.set(self.kbd.get())
         return True
 
     def cleanup(self):
         self.bright.flush()
+        if self.kbd_row:
+            self.kbd_row.flush()
         self.strength.flush()
         save_state(self.sunset.strength)
         if self.ddc:
