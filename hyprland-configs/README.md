@@ -255,7 +255,7 @@ What uses it:
 - **`monitors.lua`**: desktop gets `DP-1` @ 180Hz, laptop gets `eDP-1` @ scale 1.07. Any other monitor falls back to `preferred` / `auto`.
 - **`hyprland.lua`**: NVIDIA env vars only apply if `has_nvidia`. `batteryOpts.lua` (blur off) only loads if `has_battery`, at the end of the file so it overrides earlier settings.
 - **`autostart.lua`**: `scripts/battery-notify.sh` (battery warnings) only starts if `has_battery`.
-- **Waybar**: the `battery` module is in the shared config. Waybar hides it automatically on machines without a battery.
+- **Waybar**: the `battery` module is in the shared config. Waybar hides it automatically on machines without a battery. The brightness popup (`scripts/hyprsunset-popup.py`) likewise only shows its keyboard backlight slider if a `/sys/class/leds/*::kbd_backlight` device exists.
 
 To check what a machine is detected as:
 
