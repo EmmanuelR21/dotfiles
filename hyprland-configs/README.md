@@ -117,7 +117,7 @@ You will also need:
 6. hyprsunset: Color temperature control
 7. hyprshutdown: Graceful shutdown utility
 8. playerctl: Media keys (play/pause, next, previous)
-9. python-gobject: Needed for the waybar audio, bluetooth, network, battery, hyprsunset and power popups (`waybar/scripts/`)
+9. python-gobject: Needed for the waybar audio, bluetooth, network, battery, hyprsunset, profile and power popups (`waybar/scripts/`)
 
 ```bash
 sudo pacman -S waybar hyprpaper hypridle hyprlock wireplumber hyprsunset hyprshutdown playerctl python-gobject pipewire-audio pipewire-alsa pipewire-pulse
