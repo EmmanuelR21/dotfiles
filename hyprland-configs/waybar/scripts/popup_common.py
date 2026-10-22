@@ -48,6 +48,10 @@ BASE_CSS = """
     font-weight: bold;
     font-size: 13px;
     color: #ffffff;
+    /* Adwaita (light) gives button text/icons a white 1px shadow, which looks
+       doubled on these dark panels */
+    text-shadow: none;
+    -gtk-icon-shadow: none;
 }
 window, #catcher { background-color: transparent; }
 
@@ -113,13 +117,14 @@ class Popup(Gtk.Window):
     including the bar itself) closes the popup, so clicking out always works.
 
     align=END puts the panel's right edge cursor_offset px right of the mouse,
-    or margin_end px from the screen edge if given; align=CENTER centers it.
+    or margin_end px from the screen edge if given; align=CENTER centers it;
+    align=START puts it margin_start px from the left edge.
     """
 
     NAME = "popup"
 
     def __init__(self, spacing=8, align=Gtk.Align.END, margin_end=None,
-                 cursor_offset=24, fallback_margin=60):
+                 cursor_offset=24, fallback_margin=60, margin_start=EDGE_GAP):
         super().__init__()
         visual = self.get_screen().get_rgba_visual()
         if visual:
@@ -152,6 +157,8 @@ class Popup(Gtk.Window):
             if margin_end is None:
                 margin_end = panel_right_margin(cursor_offset, fallback_margin)
             self.panel_box.set_margin_end(margin_end)
+        elif align == Gtk.Align.START:
+            self.panel_box.set_margin_start(margin_start)
 
         catcher = Gtk.EventBox()
         catcher.set_name("catcher")

@@ -18,6 +18,7 @@ window#waybar {
     border-radius: 20px;
 }
 
+#custom-arch,
 #workspaces,
 #clock,
 #taskbar,
@@ -58,6 +59,26 @@ window#waybar {
 #workspaces,
 #taskbar {
     border-color: rgba(255, 197, 71, 0.4);
+}
+
+/* Arch logo: Arch-blue icon tile; click opens scripts/system-popup.py */
+#custom-arch {
+    /* Font Awesome (earlier in the global font list) has a pencil at U+F303,
+       the Arch logo's codepoint in Symbols Nerd Font */
+    font-family: "Symbols Nerd Font";
+    color: #1793d1;
+    background-color: #1e1e1e;
+    border-color: transparent;
+    font-size: 16px;
+    padding: 2px 7px 2px 6px;
+    transition:
+        background-color 250ms ease-out,
+        color 250ms ease-out;
+}
+
+#custom-arch:hover {
+    color: #4fb3e6;
+    background-color: #2a2a2a;
 }
 
 /* Hyprsunset: glowing amber icon tile (same tile style as network) */

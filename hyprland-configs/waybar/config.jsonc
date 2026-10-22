@@ -6,7 +6,7 @@
   "width": "auto", // Waybar width
   "spacing": 6, // Gaps between modules (4px)
   "margin": "6 6 0",
-  "modules-left": ["hyprland/workspaces", "wlr/taskbar"],
+  "modules-left": ["custom/arch", "hyprland/workspaces", "wlr/taskbar"],
   "modules-center": ["clock"],
   "modules-right": [
     "custom/hyprsunset",
@@ -17,6 +17,12 @@
     "custom/power",
   ],
   // Modules configuration
+  // Click opens scripts/system-popup.py (user, CPU/GPU/RAM, default apps)
+  "custom/arch": {
+    "format": "",
+    "tooltip": false,
+    "on-click": "$HOME/.config/waybar/scripts/system-popup.py",
+  },
   "hyprland/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
