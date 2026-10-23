@@ -4,9 +4,9 @@
 Click to open, click again to close (see popup_common.py).
 
 Battery info comes from UPower and profiles from power-profiles-daemon, both
-over D-Bus through Gio. Needs: power-profiles-daemon, upower (a dependency of
-it), python-gobject, gtk3 and gtk-layer-shell.
+over D-Bus through Gio. Needs power-profiles-daemon (which pulls in upower).
 """
+
 from gi.repository import Gio
 from popup_common import GLib, Gtk, Popup, label, run
 
@@ -14,7 +14,9 @@ from popup_common import GLib, Gtk, Popup, label, run
 CURSOR_OFFSET = 30
 FALLBACK_MARGIN_RIGHT = 50
 
-POLL_MS = 5000  # time estimates drift slowly; profile/charge changes are pushed instantly
+POLL_MS = (
+    5000  # time estimates drift slowly; profile/charge changes are pushed instantly
+)
 
 UPOWER = "org.freedesktop.UPower"
 UPOWER_DISPLAY = "/org/freedesktop/UPower/devices/DisplayDevice"
@@ -23,31 +25,69 @@ PPD = "org.freedesktop.UPower.PowerProfiles"
 PPD_PATH = "/org/freedesktop/UPower/PowerProfiles"
 
 # Same icon sets as the bar's battery module (0%, 10%, ... 100%)
-ICONS = ["\U000f008e", "\U000f007a", "\U000f007b", "\U000f007c", "\U000f007d", "\U000f007e",
-         "\U000f007f", "\U000f0080", "\U000f0081", "\U000f0082", "\U000f0079"]
-ICONS_CHARGING = ["\U000f089f", "\U000f089c", "\U000f0086", "\U000f0087", "\U000f0088", "\U000f089d",
-                  "\U000f0089", "\U000f089e", "\U000f008a", "\U000f008b", "\U000f0085"]
+ICONS = [
+    "\U000f008e",
+    "\U000f007a",
+    "\U000f007b",
+    "\U000f007c",
+    "\U000f007d",
+    "\U000f007e",
+    "\U000f007f",
+    "\U000f0080",
+    "\U000f0081",
+    "\U000f0082",
+    "\U000f0079",
+]
+ICONS_CHARGING = [
+    "\U000f089f",
+    "\U000f089c",
+    "\U000f0086",
+    "\U000f0087",
+    "\U000f0088",
+    "\U000f089d",
+    "\U000f0089",
+    "\U000f089e",
+    "\U000f008a",
+    "\U000f008b",
+    "\U000f0085",
+]
 ICON_AC = "\U000f06a5"  # power-plug, for machines without a battery
 
 # profile id -> (label, icon, one-line description)
 PROFILES = {
-    "power-saver": ("Power Saver", "\U000f032a",
-                    "Lower CPU speeds and quieter fans, for the longest battery life."),
-    "balanced": ("Balanced", "\U000f05d1",
-                 "Full speed when needed, saves power when idle."),
-    "performance": ("Performance", "\U000f04c5",
-                    "Maximum speed. Runs warmer and drains the battery faster."),
+    "power-saver": (
+        "Power Saver",
+        "\U000f032a",
+        "Lower CPU speeds and quieter fans, for the longest battery life.",
+    ),
+    "balanced": (
+        "Balanced",
+        "\U000f05d1",
+        "Full speed when needed, saves power when idle.",
+    ),
+    "performance": (
+        "Performance",
+        "\U000f04c5",
+        "Maximum speed. Runs warmer and drains the battery faster.",
+    ),
 }
 PROFILE_ORDER = ["power-saver", "balanced", "performance"]
 
 # UPower Device.State
 CHARGING, DISCHARGING, EMPTY, FULL, PENDING_CHARGE, PENDING_DISCHARGE = 1, 2, 3, 4, 5, 6
-STATE_TEXT = {CHARGING: "Charging", DISCHARGING: "On battery", EMPTY: "Empty", FULL: "Fully charged",
-              PENDING_CHARGE: "Plugged in, not charging", PENDING_DISCHARGE: "On battery"}
+STATE_TEXT = {
+    CHARGING: "Charging",
+    DISCHARGING: "On battery",
+    EMPTY: "Empty",
+    FULL: "Fully charged",
+    PENDING_CHARGE: "Plugged in, not charging",
+    PENDING_DISCHARGE: "On battery",
+}
 
-DEGRADED_TEXT = {"lap-detected": "laptop is on your lap",
-                 "high-operating-temperature": "running hot"}
-
+DEGRADED_TEXT = {
+    "lap-detected": "laptop is on your lap",
+    "high-operating-temperature": "running hot",
+}
 
 # Each profile has its own accent: mint (saver), silver (balanced, the bar's
 # battery color family), peach (performance).
@@ -101,8 +141,17 @@ BUS = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
 
 def get_all(name, path, iface):
     try:
-        reply = BUS.call_sync(name, path, "org.freedesktop.DBus.Properties", "GetAll",
-                              GLib.Variant("(s)", (iface,)), None, Gio.DBusCallFlags.NONE, 2000, None)
+        reply = BUS.call_sync(
+            name,
+            path,
+            "org.freedesktop.DBus.Properties",
+            "GetAll",
+            GLib.Variant("(s)", (iface,)),
+            None,
+            Gio.DBusCallFlags.NONE,
+            2000,
+            None,
+        )
         return reply.unpack()[0]
     except GLib.Error:
         return None
@@ -118,8 +167,17 @@ def fmt_duration(secs):
 def battery_path():
     """UPower path of the first real battery (for health info), if any."""
     try:
-        reply = BUS.call_sync(UPOWER, "/org/freedesktop/UPower", UPOWER, "EnumerateDevices",
-                              None, None, Gio.DBusCallFlags.NONE, 2000, None)
+        reply = BUS.call_sync(
+            UPOWER,
+            "/org/freedesktop/UPower",
+            UPOWER,
+            "EnumerateDevices",
+            None,
+            None,
+            Gio.DBusCallFlags.NONE,
+            2000,
+            None,
+        )
     except GLib.Error:
         return None
     for path in reply.unpack()[0]:
@@ -133,7 +191,9 @@ class BatteryPopup(Popup):
     NAME = "battery"
 
     def __init__(self):
-        super().__init__(cursor_offset=CURSOR_OFFSET, fallback_margin=FALLBACK_MARGIN_RIGHT)
+        super().__init__(
+            cursor_offset=CURSOR_OFFSET, fallback_margin=FALLBACK_MARGIN_RIGHT
+        )
         self.battery = battery_path()
         self.status = ""
         self.signature = None
@@ -142,8 +202,15 @@ class BatteryPopup(Popup):
         # Profile switches (from here, powerprofilesctl or anything else) and
         # charge/plug changes arrive as PropertiesChanged signals
         for sender in (PPD, UPOWER):
-            BUS.signal_subscribe(sender, "org.freedesktop.DBus.Properties", "PropertiesChanged",
-                                 None, None, Gio.DBusSignalFlags.NONE, lambda *_: self.schedule())
+            BUS.signal_subscribe(
+                sender,
+                "org.freedesktop.DBus.Properties",
+                "PropertiesChanged",
+                None,
+                None,
+                Gio.DBusSignalFlags.NONE,
+                lambda *_: self.schedule(),
+            )
         GLib.timeout_add(POLL_MS, self.poll)
         self.rebuild()
 
@@ -179,8 +246,12 @@ class BatteryPopup(Popup):
             "profile": ppd.get("ActiveProfile") if ppd else None,
             "available": [p["Profile"] for p in ppd.get("Profiles", [])] if ppd else [],
             "degraded": ppd.get("PerformanceDegraded", "") if ppd else "",
-            "holds": [(h.get("ApplicationId", "?"), h.get("Profile", "?"))
-                      for h in ppd.get("ActiveProfileHolds", [])] if ppd else [],
+            "holds": [
+                (h.get("ApplicationId", "?"), h.get("Profile", "?"))
+                for h in ppd.get("ActiveProfileHolds", [])
+            ]
+            if ppd
+            else [],
         }
 
     # ---- UI ----------------------------------------------------------------
@@ -201,16 +272,21 @@ class BatteryPopup(Popup):
             details = []
             if st["capacity"]:
                 details.append(f"Health {st['capacity']}%")
-            if st["cycles"] is not None and st["cycles"] >= 0:
+            if st["cycles"] >= 0:
                 details.append(f"{st['cycles']} charge cycles")
             if details:
-                self.panel.pack_start(label(" \u00b7 ".join(details), "detail"), False, False, 0)
+                self.panel.pack_start(
+                    label(" \u00b7 ".join(details), "detail"), False, False, 0
+                )
 
         self.panel.pack_start(Gtk.Separator(), False, False, 2)
         self.panel.pack_start(label("POWER PROFILE", "section"), False, False, 0)
         if not st["ppd"]:
-            msg = label("power-profiles-daemon isn't running.\n"
-                        "sudo systemctl enable --now power-profiles-daemon", "desc")
+            msg = label(
+                "power-profiles-daemon isn't running.\n"
+                "sudo systemctl enable --now power-profiles-daemon",
+                "desc",
+            )
             self.panel.pack_start(msg, False, False, 0)
         else:
             self.panel.pack_start(self.profile_picker(st), False, False, 0)
@@ -221,10 +297,14 @@ class BatteryPopup(Popup):
                 self.panel.pack_start(desc, False, False, 0)
             if st["degraded"] and st["profile"] == "performance":
                 reason = DEGRADED_TEXT.get(st["degraded"], st["degraded"])
-                self.panel.pack_start(label(f"Performance limited: {reason}.", "warn"), False, False, 0)
+                self.panel.pack_start(
+                    label(f"Performance limited: {reason}.", "warn"), False, False, 0
+                )
             for app, prof in st["holds"]:
                 name = PROFILES.get(prof, (prof,))[0]
-                self.panel.pack_start(label(f"{app} is holding {name}.", "warn"), False, False, 0)
+                self.panel.pack_start(
+                    label(f"{app} is holding {name}.", "warn"), False, False, 0
+                )
 
         if self.status:
             msg = label(self.status, "warn")
@@ -279,7 +359,11 @@ class BatteryPopup(Popup):
             box.get_style_context().add_class("low")
         bar = Gtk.LevelBar.new_for_interval(0, 100)
         # Drop GTK's default low/high/full offsets so the bar uses our colors
-        for name in (Gtk.LEVEL_BAR_OFFSET_LOW, Gtk.LEVEL_BAR_OFFSET_HIGH, Gtk.LEVEL_BAR_OFFSET_FULL):
+        for name in (
+            Gtk.LEVEL_BAR_OFFSET_LOW,
+            Gtk.LEVEL_BAR_OFFSET_HIGH,
+            Gtk.LEVEL_BAR_OFFSET_FULL,
+        ):
             bar.remove_offset_value(name)
         bar.set_value(st["pct"])
         bar.set_hexpand(True)
@@ -315,9 +399,19 @@ class BatteryPopup(Popup):
                 msg = e.message.split(": ", 1)[-1] if ": " in e.message else e.message
                 self.status = f"Couldn't switch profile: {msg}"
             self.schedule()
-        BUS.call(PPD, PPD_PATH, "org.freedesktop.DBus.Properties", "Set",
-                 GLib.Variant("(ssv)", (PPD, "ActiveProfile", GLib.Variant("s", profile))),
-                 None, Gio.DBusCallFlags.NONE, 5000, None, done)
+
+        BUS.call(
+            PPD,
+            PPD_PATH,
+            "org.freedesktop.DBus.Properties",
+            "Set",
+            GLib.Variant("(ssv)", (PPD, "ActiveProfile", GLib.Variant("s", profile))),
+            None,
+            Gio.DBusCallFlags.NONE,
+            5000,
+            None,
+            done,
+        )
 
 
 if __name__ == "__main__":

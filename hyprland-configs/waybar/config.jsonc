@@ -1,10 +1,9 @@
-// -*- mode: jsonc -*-
 {
-  "layer": "top", // Waybar at top layer
-  "position": "top", //(top|bottom|left|right)
-  "height": 30, // Waybar height (to be removed for auto height)
-  "width": "auto", // Waybar width
-  "spacing": 6, // Gaps between modules (4px)
+  "layer": "top",
+  "position": "top",
+  "height": 31,
+  "width": "auto",
+  "spacing": 6,
   "margin": "6 6 0",
   "modules-left": ["custom/arch", "hyprland/workspaces", "wlr/taskbar"],
   "modules-center": ["clock"],
@@ -16,33 +15,30 @@
     "battery",
     "custom/power",
   ],
-  // Modules configuration
-  // Click opens scripts/system-popup.py (user, CPU/GPU/RAM, default apps)
   "custom/arch": {
     "format": "",
     "tooltip": false,
     "on-click": "$HOME/.config/waybar/scripts/system-popup.py",
   },
   "hyprland/workspaces": {
+    "tooltip": false,
     "disable-scroll": true,
     "all-outputs": true,
-    "warp-on-scroll": false,
     "format": "{name}",
   },
   "wlr/taskbar": {
     "format": "{icon}",
     "icon-size": 25,
-    "tooltip-format": "{title}",
+    "tooltip": false,
     "on-click": "activate",
     "on-click-middle": "close",
     "sort-by-app-id": true,
     "squash-list": ["*"],
   },
-  // Hidden automatically on machines without a battery.
-  // Click opens scripts/battery-popup.py (battery details + power profiles).
   "battery": {
     "bat": "BAT0",
     "interval": 60,
+    "tooltip": false,
     "on-click": "$HOME/.config/waybar/scripts/battery-popup.py",
     "format": "<span color='#f0f0f0'>{capacity}%</span> {icon}",
     "format-icons": {
@@ -50,7 +46,6 @@
       "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
     },
   },
-  // Click opens scripts/calendar-popup.py (month calendar, today highlighted)
   "clock": {
     "interval": 60,
     "tooltip": false,
@@ -63,78 +58,49 @@
     "modules": ["wireplumber#sink", "wireplumber#source"],
   },
   "wireplumber#sink": {
+    "tooltip": false,
     "format": "{icon}",
     "format-muted": "󰖁",
     "format-icons": ["󰕿", "󰖀", "󰕾"],
     "on-click": "$HOME/.config/waybar/scripts/audio-popup.py",
-    // Empty scroll actions disable the built-in scroll-to-change-volume
     "on-scroll-up": "",
     "on-scroll-down": "",
   },
   "wireplumber#source": {
     "node-type": "Audio/Source",
+    "tooltip": false,
     "format": "󰍬",
     "format-muted": "󰍭",
     "on-click": "$HOME/.config/waybar/scripts/audio-popup.py",
     "on-scroll-up": "",
     "on-scroll-down": "",
   },
-  // Click opens scripts/power-popup.py (suspend / reboot / shut down)
   "custom/power": {
     "format": "⏻",
     "tooltip": false,
     "on-click": "$HOME/.config/waybar/scripts/power-popup.py",
   },
-  // Click opens scripts/hyprsunset-popup.py (brightness + night light).
-  // hyprsunset only runs while night light / software dimming is active.
   "custom/hyprsunset": {
     "format": "󰖛",
     "on-click": "$HOME/.config/waybar/scripts/hyprsunset-popup.py",
-    // Without exec/interval a custom module never runs its update, so the
-    // tooltip text is never set and GTK shows an empty box or a stale tooltip
-    // from a neighbor. "once" runs it a single time at startup (no polling).
-    "interval": "once",
-    "tooltip": true,
-    // Pango markup: "&" must be written as &amp;
-    "tooltip-format": "Brightness &amp; night light",
+    "tooltip": false,
   },
-  // Click opens scripts/bluetooth-popup.py (power toggle, devices, pairing)
   "bluetooth": {
     "format": "󰂯",
     "format-off": "󰂲",
     "format-disabled": "󰂲",
     "format-connected": "󰂱 {device_alias}",
-    // Device name + battery in silver behind a thin divider. rise lifts the
-    // small battery glyph to the text's center; the hair space (U+200A) is the gap.
     "format-connected-battery": "󰂱 <span color='#d6dde9'>{device_alias}</span> <span color='#555555'>|</span> <span color='#d6dde9'><span size='small' rise='1536'>󰁹</span> {device_battery_percentage}%</span>",
     "max-length": 30,
-    // "format-device-preference": [ "device1", "device2" ], // preference list deciding the displayed device
     "on-click": "$HOME/.config/waybar/scripts/bluetooth-popup.py",
-    "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
-    "tooltip-format-off": "Bluetooth off",
-    "tooltip-format-disabled": "Bluetooth blocked (rfkill)",
-    "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
-    "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
-    "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%",
+    "tooltip": false,
   },
-  // Click opens scripts/network-popup.py (Wi-Fi on/off, scan, connect/disconnect,
-  // live up/down speeds). Stays visible when disconnected/off so the popup is
-  // always one click away. Connection changes are instant regardless of
-  // interval; it only refreshes the tooltip's signal strength.
   "network": {
-    "interval": 10,
     "format": "󰖩",
-    "format-wifi": "󰖩",
     "format-ethernet": "󱘖",
-    "format-linked": "󰖩",
     "format-disconnected": "󰖪",
     "format-disabled": "󰖪",
     "on-click": "$HOME/.config/waybar/scripts/network-popup.py",
-    "tooltip": true,
-    "tooltip-format-disconnected": "Not connected",
-    "tooltip-format-disabled": "Wi-Fi off",
-    "tooltip-format-linked": "{ifname}: connected, no IP yet",
-    "tooltip-format-ethernet": "{ifname}  {ipaddr}/{cidr}",
-    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr}",
+    "tooltip": false,
   },
 }

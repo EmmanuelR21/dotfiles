@@ -16,6 +16,7 @@ A popup script subclasses Popup, fills self.panel, and calls run():
 
 Requires: python-gobject, gtk3, gtk-layer-shell.
 """
+
 import json
 import os
 import signal
@@ -31,12 +32,13 @@ from gi.repository import Gdk, GLib, Gtk, GtkLayerShell
 try:  # GLib.unix_signal_add is deprecated in favor of GLibUnix (GLib >= 2.80)
     gi.require_version("GLibUnix", "2.0")
     from gi.repository import GLibUnix
+
     signal_add = GLibUnix.signal_add
 except (ValueError, ImportError):
     signal_add = GLib.unix_signal_add
 
-# TOP = bar margin (6) + bar height (30) + 4px gap
-MARGIN_TOP = 40
+# TOP = bar margin (6) + bar height (31) + 4px gap
+MARGIN_TOP = 41
 EDGE_GAP = 6
 RUNTIME = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
 
@@ -87,8 +89,9 @@ def set_class(widget, name, on):
 
 
 def hyprctl_json(*args):
-    out = subprocess.run(["hyprctl", *args, "-j"], capture_output=True, text=True, timeout=2,
-                         check=False).stdout
+    out = subprocess.run(
+        ["hyprctl", *args, "-j"], capture_output=True, text=True, timeout=2, check=False
+    ).stdout
     return json.loads(out)
 
 
@@ -123,8 +126,15 @@ class Popup(Gtk.Window):
 
     NAME = "popup"
 
-    def __init__(self, spacing=8, align=Gtk.Align.END, margin_end=None,
-                 cursor_offset=24, fallback_margin=60, margin_start=EDGE_GAP):
+    def __init__(
+        self,
+        spacing=8,
+        align=Gtk.Align.END,
+        margin_end=None,
+        cursor_offset=24,
+        fallback_margin=60,
+        margin_start=EDGE_GAP,
+    ):
         super().__init__()
         visual = self.get_screen().get_rgba_visual()
         if visual:
@@ -134,8 +144,12 @@ class Popup(Gtk.Window):
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_namespace(self, f"waybar-{self.NAME}-popup")
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
-        for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
-                     GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
+        for edge in (
+            GtkLayerShell.Edge.TOP,
+            GtkLayerShell.Edge.BOTTOM,
+            GtkLayerShell.Edge.LEFT,
+            GtkLayerShell.Edge.RIGHT,
+        ):
             GtkLayerShell.set_anchor(self, edge, True)
         # -1: ignore the bar's reserved space, so margins count from the screen edge
         GtkLayerShell.set_exclusive_zone(self, -1)
@@ -207,7 +221,8 @@ def run(popup_cls, css=""):
         provider = Gtk.CssProvider()
         provider.load_from_data((BASE_CSS + css).encode())
         Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
+        )
 
         signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, Gtk.main_quit)
         popup = popup_cls()

@@ -6,6 +6,7 @@ Arrow keys / Tab move between actions, Enter runs one, Escape closes.
 
 Requires: hyprshutdown.
 """
+
 import subprocess
 
 from popup_common import Gtk, Popup, label, run
@@ -45,8 +46,13 @@ button:hover .name, button:focus .name { color: #ff7a7a; }
 
 
 def launch(cmd):
-    subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, start_new_session=True)
+    subprocess.Popen(
+        cmd,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     Gtk.main_quit()
 
 

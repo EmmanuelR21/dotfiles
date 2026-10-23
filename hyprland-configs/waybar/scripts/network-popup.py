@@ -3,10 +3,11 @@
 
 Click to open, click again to close (see popup_common.py).
 
-Talks to NetworkManager through libnm, so it needs nothing beyond the other
-popups' dependencies and networkmanager (which ships libnm). Passwords go straight to NetworkManager over D-Bus, never
-on a command line.
+Talks to NetworkManager through libnm, so it only needs networkmanager (which
+ships libnm) on top of the other popups' dependencies. Passwords go straight
+to NetworkManager over D-Bus, never on a command line.
 """
+
 import gi
 from popup_common import Gdk, GLib, Gtk, Popup, button, label, run
 
@@ -22,30 +23,37 @@ MAX_NETWORKS = 10
 POLL_MS = 1000  # also the traffic strip's sample rate
 TRAFFIC_SAMPLES = 20  # seconds of history in the traffic strip
 SPARK = "\u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588"  # ▁ .. █
-SPARK_FLOOR = 50_000  # B/s; below this the graph stays flat so idle noise doesn't look busy
+SPARK_FLOOR = (
+    50_000  # B/s; below this the graph stays flat so idle noise doesn't look busy
+)
 SCAN_SPIN_MS = 4000  # how long the spinner shows after asking for a scan
 
 # Access point flag bits (NM80211ApFlags / NM80211ApSecurityFlags)
 AP_PRIVACY = 0x1
 KEY_PSK, KEY_8021X, KEY_SAE = 0x100, 0x200, 0x400
 
-ICON_WIFI, ICON_WIFI_OFF = "\U000f05a9", "\U000f05aa"   # same as the bar
-ICON_ETHERNET = "\U000f1616"                            # same as the bar
+ICON_WIFI, ICON_WIFI_OFF = "\U000f05a9", "\U000f05aa"  # same as the bar
+ICON_ETHERNET = "\U000f1616"  # same as the bar
 ICON_EYE, ICON_EYE_OFF = "\U000f0208", "\U000f0209"
 # md-wifi-strength-1..4, plus their -lock variants for secured networks
 SIGNAL = ["\U000f091f", "\U000f0922", "\U000f0925", "\U000f0928"]
 SIGNAL_LOCK = ["\U000f0921", "\U000f0924", "\U000f0927", "\U000f092a"]
 
-SECURITY_LABEL = {"open": "Open", "psk": "WPA2", "sae": "WPA3",
-                  "enterprise": "Enterprise", "wep": "WEP"}
+SECURITY_LABEL = {
+    "open": "Open",
+    "psk": "WPA2",
+    "sae": "WPA3",
+    "enterprise": "Enterprise",
+    "wep": "WEP",
+}
 
 # Enterprise (802.1X) login types: (button label, EAP method, inner auth).
 # PEAP/MSCHAPv2 is what eduroam and most school/work networks use.
-EAP_METHODS = [("PEAP \u00b7 MSCHAPv2", "peap", "mschapv2"),
-               ("TTLS \u00b7 PAP", "ttls", "pap"),
-               ("TTLS \u00b7 MSCHAPv2", "ttls", "mschapv2")]
-
-
+EAP_METHODS = [
+    ("PEAP \u00b7 MSCHAPv2", "peap", "mschapv2"),
+    ("TTLS \u00b7 PAP", "ttls", "pap"),
+    ("TTLS \u00b7 MSCHAPv2", "ttls", "mschapv2"),
+]
 
 # #fe8019 matches #network in style.css; #ffa55c (its hover shade) is used
 # for small text so it stays readable on the dark panel.
@@ -132,7 +140,11 @@ def ssid_of(ap):
 
 
 def security_of(ap):
-    flags, wpa, rsn = int(ap.get_flags()), int(ap.get_wpa_flags()), int(ap.get_rsn_flags())
+    flags, wpa, rsn = (
+        int(ap.get_flags()),
+        int(ap.get_wpa_flags()),
+        int(ap.get_rsn_flags()),
+    )
     keys = wpa | rsn
     if keys & KEY_8021X:
         return "enterprise"
@@ -214,13 +226,15 @@ class NetworkPopup(Popup):
     NAME = "network"
 
     def __init__(self):
-        super().__init__(cursor_offset=CURSOR_OFFSET, fallback_margin=FALLBACK_MARGIN_RIGHT)
+        super().__init__(
+            cursor_offset=CURSOR_OFFSET, fallback_margin=FALLBACK_MARGIN_RIGHT
+        )
         self.client = NM.Client.new(None)
-        self.wifi = None          # NM.DeviceWifi, if the machine has one
-        self.busy = {}            # ssid -> label shown while an action runs
+        self.wifi = None  # NM.DeviceWifi, if the machine has one
+        self.busy = {}  # ssid -> label shown while an action runs
         self.password_for = None  # network dict whose password row is open
         self.show_password = False
-        self.form = {}            # enterprise form values, kept across redraws
+        self.form = {}  # enterprise form values, kept across redraws
         self.scanning = False
         self.status = ""
         self.signature = None
@@ -241,9 +255,15 @@ class NetworkPopup(Popup):
         devices = self.client.get_devices()
         self.wifi = next((d for d in devices if isinstance(d, NM.DeviceWifi)), None)
         ether = next((d for d in devices if isinstance(d, NM.DeviceEthernet)), None)
-        st = {"wifi_on": self.client.wireless_get_enabled(),
-              "wifi_hw": self.client.wireless_hardware_get_enabled(),
-              "ether": None, "networks": [], "active": None, "ip": None, "bitrate": 0}
+        st = {
+            "wifi_on": self.client.wireless_get_enabled(),
+            "wifi_hw": self.client.wireless_hardware_get_enabled(),
+            "ether": None,
+            "networks": [],
+            "active": None,
+            "ip": None,
+            "bitrate": 0,
+        }
 
         # Interface carrying the default route; the traffic strip follows it
         primary = self.client.get_primary_connection()
@@ -252,8 +272,12 @@ class NetworkPopup(Popup):
 
         if ether and ether.get_carrier():  # only show ethernet when a cable is in
             up = ether.get_state() == NM.DeviceState.ACTIVATED
-            st["ether"] = {"iface": ether.get_iface(), "up": up, "speed": ether.get_speed(),
-                           "ip": ip4_of(ether) if up else None}
+            st["ether"] = {
+                "iface": ether.get_iface(),
+                "up": up,
+                "speed": ether.get_speed(),
+                "ip": ip4_of(ether) if up else None,
+            }
 
         if not (self.wifi and st["wifi_on"]):
             return st
@@ -275,19 +299,30 @@ class NetworkPopup(Popup):
             if not ssid:
                 continue  # hidden network
             prev = networks.get(ssid)
-            if prev and (prev["ap"] == active_ap or prev["strength"] >= ap.get_strength()):
+            if prev and (
+                prev["ap"] == active_ap or prev["strength"] >= ap.get_strength()
+            ):
                 continue  # one row per name: the connected AP, else the strongest
             is_current = ssid == active_ssid
             networks[ssid] = {
-                "ssid": ssid, "ap": ap, "conn": saved.get(ssid),
-                "strength": ap.get_strength(), "security": security_of(ap),
+                "ssid": ssid,
+                "ap": ap,
+                "conn": saved.get(ssid),
+                "strength": ap.get_strength(),
+                "security": security_of(ap),
                 "active": is_current and dev_state == NM.DeviceState.ACTIVATED,
                 "connecting": is_current and connecting,
                 "band": "5 GHz" if ap.get_frequency() > 4900 else "2.4 GHz",
             }
 
-        st["networks"] = sorted(networks.values(), key=lambda n: (
-            not (n["active"] or n["connecting"]), n["conn"] is None, -n["strength"]))[:MAX_NETWORKS]
+        st["networks"] = sorted(
+            networks.values(),
+            key=lambda n: (
+                not (n["active"] or n["connecting"]),
+                n["conn"] is None,
+                -n["strength"],
+            ),
+        )[:MAX_NETWORKS]
         st["active"] = next((n for n in st["networks"] if n["active"]), None)
         if st["active"]:
             st["ip"] = ip4_of(self.wifi)
@@ -304,7 +339,9 @@ class NetworkPopup(Popup):
         """Sample byte counters and refresh the strip in place (no rebuild)."""
         self.traffic.sample()
         if self.traffic_widgets:
-            for (rate, spark), (bps, hist) in zip(self.traffic_widgets, self.traffic.view()):
+            for (rate, spark), (bps, hist) in zip(
+                self.traffic_widgets, self.traffic.view()
+            ):
                 rate.set_text(fmt_rate(bps))
                 spark.set_text(sparkline(hist))
 
@@ -316,10 +353,29 @@ class NetworkPopup(Popup):
 
     def rebuild(self, force=False):
         st = self.read_state()
-        sig = (st["primary"], st["wifi_on"], st["wifi_hw"], self.wifi is not None, str(st["ether"]), st["ip"],
-               st["bitrate"], self.scanning, self.status, tuple(sorted(self.busy.items())),
-               tuple((n["ssid"], bars(n["strength"]), n["security"], n["conn"] is not None,
-                      n["active"], n["connecting"]) for n in st["networks"]))
+        sig = (
+            st["primary"],
+            st["wifi_on"],
+            st["wifi_hw"],
+            self.wifi is not None,
+            str(st["ether"]),
+            st["ip"],
+            st["bitrate"],
+            self.scanning,
+            self.status,
+            tuple(sorted(self.busy.items())),
+            tuple(
+                (
+                    n["ssid"],
+                    bars(n["strength"]),
+                    n["security"],
+                    n["conn"] is not None,
+                    n["active"],
+                    n["connecting"],
+                )
+                for n in st["networks"]
+            ),
+        )
         if sig == self.signature and not force:
             return
         self.signature = sig
@@ -338,8 +394,18 @@ class NetworkPopup(Popup):
             if st["ether"]["up"] and st["ether"]["iface"] == st["primary"]:
                 self.panel.pack_start(self.traffic_strip(), False, False, 0)
         if not self.wifi and not st["ether"]:
-            self.panel.pack_start(self.header(ICON_WIFI_OFF, "Network", "No Wi-Fi adapter or cable", None,
-                                              off=True), False, False, 0)
+            self.panel.pack_start(
+                self.header(
+                    ICON_WIFI_OFF,
+                    "Network",
+                    "No Wi-Fi adapter or cable",
+                    None,
+                    off=True,
+                ),
+                False,
+                False,
+                0,
+            )
 
         if self.status:
             msg = label(self.status, "status")
@@ -355,14 +421,28 @@ class NetworkPopup(Popup):
         elif not on:
             sub = "Wi-Fi is off"
         elif st["active"]:
-            parts = [st["active"]["ssid"], st["ip"], f"{st['bitrate']} Mb/s" if st["bitrate"] else None]
+            parts = [
+                st["active"]["ssid"],
+                st["ip"],
+                f"{st['bitrate']} Mb/s" if st["bitrate"] else None,
+            ]
             sub = " \u00b7 ".join(p for p in parts if p)
         else:
             sub = "Not connected"
-        toggle = button("Turn off" if on else "Turn on", self.toggle_wifi,
-                        *(() if on else ("accent",)), sensitive=st["wifi_hw"])
-        self.panel.pack_start(self.header(ICON_WIFI if on else ICON_WIFI_OFF, "Wi-Fi", sub, toggle,
-                                          off=not on), False, False, 0)
+        toggle = button(
+            "Turn off" if on else "Turn on",
+            self.toggle_wifi,
+            *(() if on else ("accent",)),
+            sensitive=st["wifi_hw"],
+        )
+        self.panel.pack_start(
+            self.header(
+                ICON_WIFI if on else ICON_WIFI_OFF, "Wi-Fi", sub, toggle, off=not on
+            ),
+            False,
+            False,
+            0,
+        )
         if not on:
             return
 
@@ -384,16 +464,34 @@ class NetworkPopup(Popup):
             spinner = Gtk.Spinner()
             spinner.start()
             head.pack_start(spinner, False, False, 0)
-        head.pack_start(button("Scan", self.scan, "accent", sensitive=not self.scanning), False, False, 0)
+        head.pack_start(
+            button("Scan", self.scan, "accent", sensitive=not self.scanning),
+            False,
+            False,
+            0,
+        )
         self.panel.pack_start(head, False, False, 0)
 
         if not others:
-            self.panel.pack_start(label("No other networks found yet." if current
-                                        else "No networks found yet.", "empty"), False, False, 0)
+            self.panel.pack_start(
+                label(
+                    "No other networks found yet."
+                    if current
+                    else "No networks found yet.",
+                    "empty",
+                ),
+                False,
+                False,
+                0,
+            )
         for n in others:
             self.panel.pack_start(self.network_row(n), False, False, 0)
             if self.password_for and self.password_for["ssid"] == n["ssid"]:
-                form = self.enterprise_form(n) if n["security"] == "enterprise" else self.password_row(n)
+                form = (
+                    self.enterprise_form(n)
+                    if n["security"] == "enterprise"
+                    else self.password_row(n)
+                )
                 self.panel.pack_start(form, False, False, 0)
 
     def traffic_strip(self):
@@ -401,7 +499,9 @@ class NetworkPopup(Popup):
         strip = Gtk.Box(spacing=14)
         strip.get_style_context().add_class("traffic")
         widgets = []
-        for arrow, cls, (bps, hist) in zip(("\u2193", "\u2191"), ("down", "up"), self.traffic.view()):
+        for arrow, cls, (bps, hist) in zip(
+            ("\u2193", "\u2191"), ("down", "up"), self.traffic.view()
+        ):
             box = Gtk.Box(spacing=4)
             box.get_style_context().add_class(cls)
             rate = label(fmt_rate(bps), "rate")
@@ -451,8 +551,11 @@ class NetworkPopup(Popup):
         elif n["connecting"]:
             state = "Connecting\u2026"
         else:
-            state = " \u00b7 ".join(p for p in ("Saved" if n["conn"] else None,
-                                                  SECURITY_LABEL[n["security"]]) if p)
+            state = " \u00b7 ".join(
+                p
+                for p in ("Saved" if n["conn"] else None, SECURITY_LABEL[n["security"]])
+                if p
+            )
         text.pack_start(label(state, "state"), False, False, 0)
         row.pack_start(text, True, True, 0)
 
@@ -466,8 +569,12 @@ class NetworkPopup(Popup):
         row.pack_start(action, False, False, 0)
 
         if n["conn"]:
-            row.pack_start(button("\u2715", lambda: self.forget(n), "forget",
-                                  sensitive=not busy), False, False, 0)
+            row.pack_start(
+                button("\u2715", lambda: self.forget(n), "forget", sensitive=not busy),
+                False,
+                False,
+                0,
+            )
         return row
 
     def password_row(self, n):
@@ -484,10 +591,17 @@ class NetworkPopup(Popup):
             self.show_password = not self.show_password
             entry.set_visibility(self.show_password)
             eye.set_label(ICON_EYE_OFF if self.show_password else ICON_EYE)
-        eye = button(ICON_EYE_OFF if self.show_password else ICON_EYE, toggle_eye, "eye")
+
+        eye = button(
+            ICON_EYE_OFF if self.show_password else ICON_EYE, toggle_eye, "eye"
+        )
         row.pack_start(eye, False, False, 0)
-        row.pack_start(button("Join", lambda: self.submit_password(n, entry.get_text()), "accent"),
-                       False, False, 0)
+        row.pack_start(
+            button("Join", lambda: self.submit_password(n, entry.get_text()), "accent"),
+            False,
+            False,
+            0,
+        )
         GLib.idle_add(entry.grab_focus)
         return row
 
@@ -517,13 +631,24 @@ class NetworkPopup(Popup):
             self.show_password = not self.show_password
             pw.set_visibility(self.show_password)
             eye.set_label(ICON_EYE_OFF if self.show_password else ICON_EYE)
-        eye = button(ICON_EYE_OFF if self.show_password else ICON_EYE, toggle_eye, "eye")
+
+        eye = button(
+            ICON_EYE_OFF if self.show_password else ICON_EYE, toggle_eye, "eye"
+        )
         pw_row.pack_start(eye, False, False, 0)
         box.pack_start(pw_row, False, False, 0)
 
-        box.pack_start(field("domain", "Server domain, e.g. school.edu (recommended)"), False, False, 0)
-        hint = label("The domain makes sure you're logging in to the real network, "
-                     "not a look-alike. Your IT page usually lists it.", "empty")
+        box.pack_start(
+            field("domain", "Server domain, e.g. school.edu (recommended)"),
+            False,
+            False,
+            0,
+        )
+        hint = label(
+            "The domain makes sure you're logging in to the real network, "
+            "not a look-alike. Your IT page usually lists it.",
+            "empty",
+        )
         hint.set_line_wrap(True)
         hint.set_max_width_chars(44)
         box.pack_start(hint, False, False, 0)
@@ -535,9 +660,12 @@ class NetworkPopup(Popup):
         def cycle():
             self.form["method"] = (self.form.get("method", 0) + 1) % len(EAP_METHODS)
             method.set_label(EAP_METHODS[self.form["method"]][0])
+
         method = button(EAP_METHODS[self.form.get("method", 0)][0], cycle)
         actions.pack_start(method, False, False, 0)
-        actions.pack_end(button("Join", lambda: self.submit_enterprise(n), "accent"), False, False, 0)
+        actions.pack_end(
+            button("Join", lambda: self.submit_enterprise(n), "accent"), False, False, 0
+        )
         box.pack_start(actions, False, False, 0)
 
         GLib.idle_add((pw if self.form.get("user") else user).grab_focus)
@@ -545,9 +673,18 @@ class NetworkPopup(Popup):
 
     def ethernet_row(self, e):
         parts = [e["iface"], e["ip"], f"{e['speed']} Mb/s" if e["speed"] else None]
-        sub = " \u00b7 ".join(p for p in parts if p) if e["up"] else f"{e['iface']} \u00b7 cable plugged in, not connected"
-        return self.header(ICON_ETHERNET, "Ethernet" + (" \u00b7 Connected" if e["up"] else ""), sub,
-                           None, off=not e["up"])
+        sub = (
+            " \u00b7 ".join(p for p in parts if p)
+            if e["up"]
+            else f"{e['iface']} \u00b7 cable plugged in, not connected"
+        )
+        return self.header(
+            ICON_ETHERNET,
+            "Ethernet" + (" \u00b7 Connected" if e["up"] else ""),
+            sub,
+            None,
+            off=not e["up"],
+        )
 
     # ---- actions -----------------------------------------------------------
 
@@ -563,8 +700,16 @@ class NetworkPopup(Popup):
                 return
             if on:  # radio needs a moment before it can scan
                 GLib.timeout_add(1500, lambda: self.scan() and False)
-        self.client.dbus_set_property(NM.DBUS_PATH, NM.DBUS_INTERFACE, "WirelessEnabled",
-                                      GLib.Variant("b", on), -1, None, done)
+
+        self.client.dbus_set_property(
+            NM.DBUS_PATH,
+            NM.DBUS_INTERFACE,
+            "WirelessEnabled",
+            GLib.Variant("b", on),
+            -1,
+            None,
+            done,
+        )
 
     def scan(self):
         if not self.wifi or self.scanning:
@@ -581,6 +726,7 @@ class NetworkPopup(Popup):
             self.scanning = False
             self.rebuild()
             return False
+
         self.wifi.request_scan_async(None, done)
         GLib.timeout_add(SCAN_SPIN_MS, stop)
         self.rebuild()
@@ -595,17 +741,30 @@ class NetworkPopup(Popup):
             self.form = {}
             self.rebuild(force=True)
         else:
-            self.set_status(f"{SECURITY_LABEL[n['security']]} networks aren't supported here; "
-                            "connect with nmtui instead.")
+            self.set_status(
+                f"{SECURITY_LABEL[n['security']]} networks aren't supported here; "
+                "connect with nmtui instead."
+            )
 
     def submit_enterprise(self, n):
-        user, password = self.form.get("user", "").strip(), self.form.get("password", "")
+        user, password = (
+            self.form.get("user", "").strip(),
+            self.form.get("password", ""),
+        )
         if not user or not password:
             self.set_status("Enter a username and password.")
             return
         _, eap, phase2 = EAP_METHODS[self.form.get("method", 0)]
-        self.activate(n, eap={"eap": eap, "phase2": phase2, "user": user, "password": password,
-                              "domain": self.form.get("domain", "").strip()})
+        self.activate(
+            n,
+            eap={
+                "eap": eap,
+                "phase2": phase2,
+                "user": user,
+                "password": password,
+                "domain": self.form.get("domain", "").strip(),
+            },
+        )
         self.form = {}
 
     def submit_password(self, n, password):
@@ -638,14 +797,18 @@ class NetworkPopup(Popup):
 
         ap_path = n["ap"].get_path()
         if not new:
-            self.client.activate_connection_async(n["conn"], self.wifi, ap_path, None, done)
+            self.client.activate_connection_async(
+                n["conn"], self.wifi, ap_path, None, done
+            )
             return
         partial = None
         if password is not None:
             partial = NM.SimpleConnection.new()
             sec = NM.SettingWirelessSecurity.new()
-            sec.set_property(NM.SETTING_WIRELESS_SECURITY_KEY_MGMT,
-                             "sae" if n["security"] == "sae" else "wpa-psk")
+            sec.set_property(
+                NM.SETTING_WIRELESS_SECURITY_KEY_MGMT,
+                "sae" if n["security"] == "sae" else "wpa-psk",
+            )
             sec.set_property(NM.SETTING_WIRELESS_SECURITY_PSK, password)
             partial.add_setting(sec)
         elif eap is not None:
@@ -664,7 +827,9 @@ class NetworkPopup(Popup):
                 s8.set_property("system-ca-certs", True)
                 s8.set_property("domain-suffix-match", eap["domain"])
             partial.add_setting(s8)
-        self.client.add_and_activate_connection_async(partial, self.wifi, ap_path, None, done)
+        self.client.add_and_activate_connection_async(
+            partial, self.wifi, ap_path, None, done
+        )
 
     def watch(self, ac, ssid, new):
         """Follow an activation; report failures and drop new profiles that
@@ -682,20 +847,31 @@ class NetworkPopup(Popup):
                 if reason == NM.ActiveConnectionStateReason.USER_DISCONNECTED:
                     return  # canceled on purpose
                 dev_reason = self.wifi.get_state_reason() if self.wifi else None
-                wrong_pw = (reason in (NM.ActiveConnectionStateReason.NO_SECRETS,
-                                       NM.ActiveConnectionStateReason.LOGIN_FAILED)
-                            or dev_reason in (NM.DeviceStateReason.NO_SECRETS,
-                                              NM.DeviceStateReason.SUPPLICANT_DISCONNECT))
+                wrong_pw = reason in (
+                    NM.ActiveConnectionStateReason.NO_SECRETS,
+                    NM.ActiveConnectionStateReason.LOGIN_FAILED,
+                ) or dev_reason in (
+                    NM.DeviceStateReason.NO_SECRETS,
+                    NM.DeviceStateReason.SUPPLICANT_DISCONNECT,
+                )
                 if new:
                     conn = self.client.get_connection_by_uuid(uuid)
                     if conn:
                         conn.delete_async(None, None)
-                    self.set_status(f"Couldn't join {ssid}" +
-                                    (": wrong password?" if wrong_pw else "."))
+                    self.set_status(
+                        f"Couldn't join {ssid}"
+                        + (": wrong password?" if wrong_pw else ".")
+                    )
                 else:
-                    self.set_status(f"Couldn't connect to {ssid}" +
-                                    (". Password changed? Forget it (\u2715) and join again."
-                                     if wrong_pw else "."))
+                    self.set_status(
+                        f"Couldn't connect to {ssid}"
+                        + (
+                            ". Password changed? Forget it (\u2715) and join again."
+                            if wrong_pw
+                            else "."
+                        )
+                    )
+
         handler = ac.connect("notify::state", on_state)
 
     def disconnect(self):
@@ -704,6 +880,7 @@ class NetworkPopup(Popup):
                 dev.disconnect_finish(res)
             except GLib.Error as e:
                 self.set_status(f"Disconnect: {nice(e)}")
+
         self.wifi.disconnect_async(None, done)
 
     def forget(self, n):
@@ -712,6 +889,7 @@ class NetworkPopup(Popup):
                 conn.delete_finish(res)
             except GLib.Error as e:
                 self.set_status(f"{n['ssid']}: {nice(e)}")
+
         n["conn"].delete_async(None, done)
 
     def on_key(self, _w, event):

@@ -13,6 +13,7 @@ The Pacman / AUR tabs list explicitly installed repo (pacman -Qen) and
 foreign (pacman -Qem, i.e. AUR via paru) packages. Each list is loaded in the
 background the first time its tab is opened, never at popup open.
 """
+
 import contextlib
 import os
 import platform
@@ -36,12 +37,27 @@ PACKAGE_TABS = [("Pacman", "-Qen", None), ("AUR", "-Qem", "paru")]
 # (label, icon, mime types). Candidates are listed for the first type; the
 # chosen app becomes the default for all of them.
 CATEGORIES = [
-    ("Browser", "\U000f059f", ["x-scheme-handler/https", "x-scheme-handler/http",
-                               "text/html", "application/xhtml+xml"]),
+    (
+        "Browser",
+        "\U000f059f",
+        [
+            "x-scheme-handler/https",
+            "x-scheme-handler/http",
+            "text/html",
+            "application/xhtml+xml",
+        ],
+    ),
     ("PDF", "\U000f0226", ["application/pdf"]),
-    ("Documents", "\U000f0219", [
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/msword", "application/vnd.oasis.opendocument.text", "application/rtf"]),
+    (
+        "Documents",
+        "\U000f0219",
+        [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+            "application/vnd.oasis.opendocument.text",
+            "application/rtf",
+        ],
+    ),
     ("Files", "\U000f024b", ["inode/directory"]),
     ("Images", "\U000f02e9", ["image/png", "image/jpeg", "image/webp", "image/gif"]),
     ("Video", "\U000f0381", ["video/mp4", "video/x-matroska", "video/webm"]),
@@ -112,6 +128,7 @@ button.choice:hover {{ background-color: #2e2e2e; }}
 
 # ---------------------------------------------------------------- system info
 
+
 def read(path):
     try:
         with open(path) as f:
@@ -136,7 +153,11 @@ def cpu_info():
     for junk in (" Processor", " with Radeon Graphics", " CPU"):
         model = model.replace(junk, "")
     model = " ".join(w for w in model.split() if not w.endswith("-Core"))
-    return f"{model} \u00b7 {os.cpu_count()} threads" if model else f"{os.cpu_count()} threads"
+    return (
+        f"{model} \u00b7 {os.cpu_count()} threads"
+        if model
+        else f"{os.cpu_count()} threads"
+    )
 
 
 def pci_names(wanted):
@@ -165,15 +186,23 @@ def gpu_info():
     ids = []
     for card in sorted(os.listdir("/sys/class/drm")):
         dev = f"/sys/class/drm/{card}/device"
-        if not card.startswith("card") or "-" in card or not read(f"{dev}/class").startswith("0x03"):
+        if (
+            not card.startswith("card")
+            or "-" in card
+            or not read(f"{dev}/class").startswith("0x03")
+        ):
             continue
-        ids.append((read(f"{dev}/vendor")[2:].lower(), read(f"{dev}/device")[2:].lower()))
+        ids.append(
+            (read(f"{dev}/vendor")[2:].lower(), read(f"{dev}/device")[2:].lower())
+        )
     names = pci_names(set(ids))
     out = []
     for vendor, device in dict.fromkeys(ids):
         name = names.get((vendor, device), f"device {device}")
-        if "[" in name and name.endswith("]"):  # "GA104 [GeForce RTX 3060 Ti]" -> bracket part
-            name = name[name.index("[") + 1:-1]
+        if "[" in name and name.endswith(
+            "]"
+        ):  # "GA104 [GeForce RTX 3060 Ti]" -> bracket part
+            name = name[name.index("[") + 1 : -1]
         brand = GPU_VENDORS.get(vendor, "")
         out.append(f"{brand} {name}".strip() if brand and brand not in name else name)
     return out or ["Unknown"]
@@ -209,6 +238,7 @@ def disk_info():
 
 # ---------------------------------------------------------------- default apps
 
+
 def candidates(mime):
     default = Gio.AppInfo.get_default_for_type(mime, False)
     apps = [a for a in Gio.AppInfo.get_all_for_type(mime) if a.should_show()]
@@ -222,7 +252,7 @@ class Tile(Gtk.Button):
 
     def __init__(self, name, icon, mimes):
         super().__init__()
-        self.name, self.mimes = name, mimes
+        self.mimes = mimes
         self.get_style_context().add_class("tile")
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         top = Gtk.Box(spacing=6)
@@ -259,8 +289,11 @@ class PackageList(Gtk.Box):
         self.total = 0
         self.rows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.rows.get_style_context().add_class("pkgs")
-        scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER,
-                                    propagate_natural_height=True, max_content_height=220)
+        scroll = Gtk.ScrolledWindow(
+            hscrollbar_policy=Gtk.PolicyType.NEVER,
+            propagate_natural_height=True,
+            max_content_height=220,
+        )
         scroll.add(self.rows)
         self.pack_start(scroll, False, False, 0)
 
@@ -279,8 +312,10 @@ class PackageList(Gtk.Box):
             return
         self.message("Loading\u2026")
         try:
-            proc = Gio.Subprocess.new(["pacman", self.flags], Gio.SubprocessFlags.STDOUT_PIPE
-                                      | Gio.SubprocessFlags.STDERR_SILENCE)
+            proc = Gio.Subprocess.new(
+                ["pacman", self.flags],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE,
+            )
         except GLib.Error:
             self.message("Couldn't run pacman")
             return
@@ -312,6 +347,7 @@ class PackageList(Gtk.Box):
 
 # ---------------------------------------------------------------- popup
 
+
 class SystemPopup(Popup):
     NAME = "system"
 
@@ -333,7 +369,11 @@ class SystemPopup(Popup):
 
         # Hardware
         hw = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        rows = [(ICON_CPU, cpu_info())] + [(ICON_GPU, g) for g in gpu_info()] + [(ICON_RAM, mem_info())]
+        rows = (
+            [(ICON_CPU, cpu_info())]
+            + [(ICON_GPU, g) for g in gpu_info()]
+            + [(ICON_RAM, mem_info())]
+        )
         rows += [(ICON_DISK, d) for d in disk_info()]
         for icon, val in rows:
             row = Gtk.Box(spacing=6)
@@ -348,8 +388,11 @@ class SystemPopup(Popup):
         self.panel.pack_start(Gtk.Separator(), False, False, 0)
 
         # Tabs: Default apps | Pacman | AUR
-        self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE,
-                               transition_duration=120, vhomogeneous=False)
+        self.stack = Gtk.Stack(
+            transition_type=Gtk.StackTransitionType.CROSSFADE,
+            transition_duration=120,
+            vhomogeneous=False,
+        )
         self.tabs = {}
         tab_row = Gtk.Box(spacing=2)
         for name in ["Default apps"] + [t[0] for t in PACKAGE_TABS]:
@@ -415,13 +458,17 @@ class SystemPopup(Popup):
         for child in self.choices.get_children():
             child.destroy()
         if not tile.apps:
-            self.choices.pack_start(label("No installed apps for this", "empty"), False, False, 0)
+            self.choices.pack_start(
+                label("No installed apps for this", "empty"), False, False, 0
+            )
         for app in tile.apps:
             current = bool(tile.default) and app.get_id() == tile.default.get_id()
             box = Gtk.Box(spacing=8)
             icon = app.get_icon()
             if icon:
-                box.pack_start(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU), False, False, 0)
+                box.pack_start(
+                    Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU), False, False, 0
+                )
             box.pack_start(label(app.get_name()), True, True, 0)
             if current:
                 box.pack_start(label(ICON_CHECK), False, False, 0)

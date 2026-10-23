@@ -10,6 +10,7 @@ tooltip calendar (amber today/weekdays, white days, peach month).
 Power: nothing polls. The grid is 42 reused labels that only get new text on
 month changes; one timer fires at midnight to move the "today" highlight.
 """
+
 import datetime
 
 from popup_common import Gdk, GLib, Gtk, Popup, label, run, set_class
@@ -101,7 +102,9 @@ class CalendarPopup(Popup):
             self.cells.append(cell)
         self.panel.pack_start(grid, False, False, 0)
 
-        self.panel_box.add_events(Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
+        self.panel_box.add_events(
+            Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK
+        )
         self.panel_box.connect("scroll-event", self.on_scroll)
 
         self.render()
@@ -136,8 +139,12 @@ class CalendarPopup(Popup):
 
     def schedule_midnight(self):
         now = datetime.datetime.now()
-        tomorrow = datetime.datetime.combine(now.date() + datetime.timedelta(days=1), datetime.time())
-        GLib.timeout_add_seconds(int((tomorrow - now).total_seconds()) + 1, self.on_midnight)
+        tomorrow = datetime.datetime.combine(
+            now.date() + datetime.timedelta(days=1), datetime.time()
+        )
+        GLib.timeout_add_seconds(
+            int((tomorrow - now).total_seconds()) + 1, self.on_midnight
+        )
 
     def on_midnight(self):
         self.today = datetime.date.today()

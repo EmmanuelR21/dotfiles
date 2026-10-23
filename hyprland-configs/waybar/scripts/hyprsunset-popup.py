@@ -26,6 +26,7 @@ slider changes).
 Requires: hyprsunset; brightnessctl (laptop) or ddcutil (desktop) for
 hardware brightness.
 """
+
 import json
 import os
 import shutil
@@ -58,8 +59,10 @@ ICON_TEMP = "\U000f050f"
 DDC_CACHE = os.path.join(RUNTIME, "waybar-ddc-buses.json")
 _HIS = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
 SOCK = os.path.join(RUNTIME, "hypr", _HIS or "", ".hyprsunset.sock")
-STATE_FILE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")),
-                          "waybar-hyprsunset.json")
+STATE_FILE = os.path.join(
+    os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")),
+    "waybar-hyprsunset.json",
+)
 
 CSS = """
 #panel { padding: 12px 14px; min-width: 300px; }
@@ -128,6 +131,7 @@ button:hover { background-color: #333333; }
 
 # ---------------------------------------------------------------- helpers
 
+
 def strength_to_temp(s):
     return round(TEMP_WEAK - (TEMP_WEAK - TEMP_STRONG) * s / 100)
 
@@ -155,6 +159,7 @@ def save_state(strength):
 
 
 # ---------------------------------------------------------------- backends
+
 
 def ipc(cmd):
     """Send one command to the running hyprsunset; None if it isn't running."""
@@ -206,9 +211,13 @@ class Hyprsunset:
         args = ["-t", str(self.temp)] if self.night else ["-i"]
         if self.gamma < 100:
             args += ["-g", str(self.gamma)]
-        subprocess.Popen(["hyprsunset", *args], stdin=subprocess.DEVNULL,
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                         start_new_session=True)
+        subprocess.Popen(
+            ["hyprsunset", *args],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
         # Wait for its socket so the next slider step goes over IPC instead of
         # launching a second instance (usually ready within a few ms)
         for _ in range(50):
@@ -237,8 +246,20 @@ class Backlight:
 
     def set(self, pct):
         try:
-            subprocess.run(["brightnessctl", "-q", "-d", self.name, "-e4", "-n2", "set", f"{pct}%"],
-                           timeout=2, check=False)
+            subprocess.run(
+                [
+                    "brightnessctl",
+                    "-q",
+                    "-d",
+                    self.name,
+                    "-e4",
+                    "-n2",
+                    "set",
+                    f"{pct}%",
+                ],
+                timeout=2,
+                check=False,
+            )
         except (OSError, subprocess.TimeoutExpired):
             pass
 
@@ -269,8 +290,11 @@ class KbdBacklight:
 
     def set(self, level):
         try:
-            subprocess.run(["brightnessctl", "-q", "-d", self.name, "set", str(level)],
-                           timeout=2, check=False)
+            subprocess.run(
+                ["brightnessctl", "-q", "-d", self.name, "set", str(level)],
+                timeout=2,
+                check=False,
+            )
         except (OSError, subprocess.TimeoutExpired):
             pass
 
@@ -285,7 +309,9 @@ class KbdBacklight:
 def find_kbd_backlight():
     """None on machines without one (desktops), so the row is never added."""
     try:
-        names = sorted(n for n in os.listdir("/sys/class/leds") if n.endswith("::kbd_backlight"))
+        names = sorted(
+            n for n in os.listdir("/sys/class/leds") if n.endswith("::kbd_backlight")
+        )
         return KbdBacklight(names[0]) if names else None
     except (OSError, ValueError):
         return None
@@ -293,8 +319,13 @@ def find_kbd_backlight():
 
 def ddcutil(*args, timeout=5):
     try:
-        r = subprocess.run(["ddcutil", *args], capture_output=True, text=True, timeout=timeout,
-                           check=False)
+        r = subprocess.run(
+            ["ddcutil", *args],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
         return r.stdout if r.returncode == 0 else None
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -384,6 +415,7 @@ class DDC:
 
 # ---------------------------------------------------------------- widgets
 
+
 class SliderRow(Gtk.Box):
     """icon | name | slider | value. Drag events are coalesced (~40ms)."""
 
@@ -447,17 +479,25 @@ class HyprsunsetPopup(Popup):
     NAME = "hyprsunset"
 
     def __init__(self):
-        super().__init__(spacing=10, cursor_offset=CURSOR_OFFSET,
-                         fallback_margin=FALLBACK_MARGIN_RIGHT)
+        super().__init__(
+            spacing=10,
+            cursor_offset=CURSOR_OFFSET,
+            fallback_margin=FALLBACK_MARGIN_RIGHT,
+        )
         self.sunset = Hyprsunset()
         self.backlight = find_backlight()
         self.ddc = None
 
         # Brightness
         self.bright = SliderRow(
-            ICON_BRIGHT[2], "Brightness", 1, 100,
-            lambda v: f"{v}%", self.on_brightness,
-            icon_fn=lambda v: ICON_BRIGHT[0 if v < 34 else 1 if v < 67 else 2])
+            ICON_BRIGHT[2],
+            "Brightness",
+            1,
+            100,
+            lambda v: f"{v}%",
+            self.on_brightness,
+            icon_fn=lambda v: ICON_BRIGHT[0 if v < 34 else 1 if v < 67 else 2],
+        )
         if self.backlight:
             self.bright.set(self.backlight.get())
         elif shutil.which("ddcutil"):
@@ -474,8 +514,9 @@ class HyprsunsetPopup(Popup):
         self.kbd = find_kbd_backlight()
         self.kbd_row = None
         if self.kbd:
-            self.kbd_row = SliderRow(ICON_KBD, "Keyboard", 0, self.kbd.max,
-                                     self.kbd.describe, self.kbd.set)
+            self.kbd_row = SliderRow(
+                ICON_KBD, "Keyboard", 0, self.kbd.max, self.kbd.describe, self.kbd.set
+            )
             # The LED only has a few levels: the knob jumps between them
             # (drag or click), with a tick under each one
             scale = self.kbd_row.scale
@@ -502,8 +543,14 @@ class HyprsunsetPopup(Popup):
         head.pack_start(self.toggle, False, False, 0)
         self.night_box.pack_start(head, False, False, 0)
 
-        self.strength = SliderRow(ICON_TEMP, "Strength", 0, 100,
-                                  lambda v: f"{strength_to_temp(v)}K", self.on_strength)
+        self.strength = SliderRow(
+            ICON_TEMP,
+            "Strength",
+            0,
+            100,
+            lambda v: f"{strength_to_temp(v)}K",
+            self.on_strength,
+        )
         self.strength.set(self.sunset.strength)
         self.night_box.pack_start(self.strength, False, False, 0)
         self.panel.pack_start(self.night_box, False, False, 0)
@@ -522,7 +569,9 @@ class HyprsunsetPopup(Popup):
     def use_software_dimming(self):
         self.bright.scale.set_range(SOFT_MIN, 100)
         self.bright.set(self.sunset.gamma)
-        self.bright.set_tooltip_text("Software dimming (no hardware brightness control found)")
+        self.bright.set_tooltip_text(
+            "Software dimming (no hardware brightness control found)"
+        )
 
     def on_ddc_ready(self, pct):
         if pct is None:
