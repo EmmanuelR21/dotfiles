@@ -18,6 +18,8 @@ hl.bind(mainMod .. " + M",
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 -- Mimic KRunner for opening apps
 hl.bind("ALT" .. " + SPACE", hl.dsp.exec_cmd(menu))
+-- Search all open windows (any workspace/monitor) and jump to the selected one
+hl.bind("ALT + TAB", hl.dsp.exec_cmd("~/.config/hypr/scripts/window-switcher.sh"))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = 1 }))
 hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = 0 }))
 
