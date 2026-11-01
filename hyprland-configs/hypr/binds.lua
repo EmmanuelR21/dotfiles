@@ -4,7 +4,8 @@ local menu     = "hyprlauncher"
 
 
 -- Grim + slurp + swappy for screenshot selection
-hl.bind("Print", hl.dsp.exec_cmd("grim - | satty --filename - --fullscreen --initial-tool crop --copy-command wl-copy --early-exit"))
+hl.bind("Print",
+    hl.dsp.exec_cmd("grim - | satty --filename - --fullscreen --initial-tool crop --copy-command wl-copy --early-exit"))
 
 -- Hide Waybar
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("killall -SIGUSR1 waybar"))
@@ -51,10 +52,10 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 hl.bind("ALT + R", hl.dsp.submap("resize"))
 
 hl.define_submap("resize", function()
-    hl.bind("H", hl.dsp.window.resize({ x = -20, y = 0, relative = true }, { repeating = true }))
-    hl.bind("J", hl.dsp.window.resize({ x = 0, y = 20, relative = true }, { repeating = true }))
-    hl.bind("K", hl.dsp.window.resize({ x = 0, y = -20, relative = true }, { repeating = true }))
-    hl.bind("L", hl.dsp.window.resize({ x = 20, y = 0, relative = true }, { repeating = true }))
+    hl.bind("H", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), { repeating = true })
+    hl.bind("J", hl.dsp.window.resize({ x = 0, y = 20, relative = true }), { repeating = true })
+    hl.bind("K", hl.dsp.window.resize({ x = 0, y = -20, relative = true }), { repeating = true })
+    hl.bind("L", hl.dsp.window.resize({ x = 20, y = 0, relative = true }), { repeating = true })
 
     hl.bind("escape", hl.dsp.submap("reset"))
 end)
@@ -76,9 +77,9 @@ hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tru
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 -- Window groups (tabbed stacks)
-hl.bind(mainMod .. " + G", hl.dsp.group.toggle())               -- make/dissolve a group
-hl.bind(mainMod .. " + TAB", hl.dsp.group.next())               -- next tab in group
-hl.bind(mainMod .. " + SHIFT + TAB", hl.dsp.group.prev())       -- previous tab in group
+hl.bind(mainMod .. " + G", hl.dsp.group.toggle())         -- make/dissolve a group
+hl.bind(mainMod .. " + TAB", hl.dsp.group.next())         -- next tab in group
+hl.bind(mainMod .. " + SHIFT + TAB", hl.dsp.group.prev()) -- previous tab in group
 hl.bind(mainMod .. " + CTRL + H", hl.dsp.window.move({ into_group = "l" }))
 hl.bind(mainMod .. " + CTRL + J", hl.dsp.window.move({ into_group = "d" }))
 hl.bind(mainMod .. " + CTRL + K", hl.dsp.window.move({ into_group = "u" }))
