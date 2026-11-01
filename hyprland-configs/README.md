@@ -6,9 +6,7 @@ sudo pacman -S hyprland
 
 ## NVIDIA steps (If Applicable)
 
-Need to install the open source/proprietary drivers.
-
-Choose one of the following commands, if one isnt working, try another.
+Honestly its probably smarter to follow the official NVIDIA instructions on Hyprland's site. This is provided however as a reference.
 
 **NOTE**: dkms driver package will require `linux-headers`
 
@@ -36,28 +34,33 @@ sudo pacman -S nvidia-utils egl-wayland
 sudo pacman -S lib32-nvidia-utils
 ```
 
-You will likely want gamescope for some of your games.
+## Post NVIDIA
+
+You will likely want gamescope for your games.
 
 ```bash
 sudo pacman -S gamescope
 ```
 
-## Post NVIDIA
+If you are using gamescope, this is the command to include within the steam properties tab, with the first values tweaked to the Desktop Monitor resolution & refresh rate:
 
-Make sure to install `ghostty`. Ghostty is the terminal set in `binds.lua`, if you choose to use another, just make sure to update the `terminal` variable in `~/.config/hypr/binds.lua` to use whatever terminal you use.
+`gamescope -W 1920 -H 1080 -r 180 --adaptive-sync --force-grab-cursor -f -- %command%`
 
-You will also need these fonts for waybar's text, icons and symbols:
+You will now need a terminal emulator, login manager, brightness control and these fonts for waybar's text, icons and symbols:
 
-- `gnu-free-fonts` (FreeSans)
+- `ghostty` (Terminal Emulator)
+- `ly` (Login Manager)
+- `brightnessctl` (Brightness Control)
+- `gnu-free-fonts`
 - `otf-font-awesome`
 - `ttf-nerd-fonts-symbols`
 
 ```bash
 # Login manager, brightness control and fonts
-sudo pacman -S ly brightnessctl gnu-free-fonts otf-font-awesome ttf-nerd-fonts-symbols
+sudo pacman -S ly ghostty brightnessctl gnu-free-fonts otf-font-awesome ttf-nerd-fonts-symbols
 ```
 
-Enable ly:
+Enable login manager:
 
 ```bash
 sudo systemctl enable ly@tty1.service
@@ -71,13 +74,11 @@ sudo pacman -S grim satty wl-clipboard
 
 The configuration for this to work is already within the binds.lua config file.
 
-**You can now reboot.**
-
 # Configs
 
 ## Prerequisites
 
-You will need
+You will need the following:
 
 - hyprlauncher (app launcher)
 - browser (default: librewolf)
@@ -166,28 +167,17 @@ Enable bluetooth:
 sudo systemctl enable --now bluetooth
 ```
 
-Click the bluetooth icon in waybar to turn it on/off and connect/disconnect devices. To add a new device, put it in pairing mode, hit **Scan**, then **Pair**.
+# Apply Configs and First Reboot
 
-If a device won't pair from the popup, use `bluetoothctl` instead (replace the address with your device's, shown after `scan on`):
-
-```bash
-bluetoothctl
-scan on
-pair XX:XX:XX:XX:XX:XX
-trust XX:XX:XX:XX:XX:XX
-connect XX:XX:XX:XX:XX:XX
-```
-
-## Apply Configs
+Run the `apply-configs.sh` script to copy config files to `~/.config/`.
 
 ```bash
-# Assuming you have this repository in your home directory
-cd ~/dotfiles
-git pull
-cp -r ~/dotfiles/hyprland-configs/hypr ~/dotfiles/hyprland-configs/waybar ~/dotfiles/hyprland-configs/dunst ~/.config/
+~/dotfiles/scripts/apply-configs.sh
 ```
 
-## Notifications
+**You can now reboot.**
+
+# Notifications
 
 Dunst is styled to match Hyprland (`dunst/dunstrc`): same greys, square 2px border, Adwaita Sans 12. Urgency is shown by the border colour (grey / light grey / red), text always stays bright. Hovering a notification pauses its timer. Notifications slide in from the right (layer rule in `hyprland.lua`).
 
@@ -202,7 +192,7 @@ To test that dunst is working:
 notify-send "Hello" "Test notification"
 ```
 
-## Wallpapers
+# Wallpapers
 
 `hyprpaper.conf` and `hyprlock.conf` don't point at a specific image. They point at two fixed names:
 
@@ -211,7 +201,7 @@ notify-send "Hello" "Test notification"
 
 These are **symlinks** (shortcuts) to real images in `~/Pictures/wallpapers/`. Each machine sets its own links, so the configs stay identical on every device while the wallpapers can differ.
 
-### First-time setup
+## First-time setup
 
 ```bash
 mkdir -p ~/Pictures/wallpapers/selected
@@ -219,7 +209,7 @@ ln -sf ../dark_white_mountains.png ~/Pictures/wallpapers/selected/background.png
 ln -sf ../night_gas_station.png ~/Pictures/wallpapers/selected/lockscreen.png
 ```
 
-### Changing wallpapers
+## Changing wallpapers
 
 ```bash
 # Desktop (restart hyprpaper to apply)
@@ -238,7 +228,7 @@ To see which images are currently selected:
 ls -l ~/Pictures/wallpapers/selected/
 ```
 
-## Per-Device Settings
+# Per-Device Settings
 
 The same configs work on every machine. Device differences are detected automatically from the hardware, so nothing needs changing per device.
 
@@ -266,17 +256,7 @@ ls /sys/class/power_supply/           # BAT0 = has battery
 
 To change a device's monitor, edit its block in `hypr/monitors.lua` (`hyprctl monitors all` lists monitor names and modes).
 
-## New Device Checklist
-
-1. Install packages (see above) and clone this repo to `~/dotfiles`.
-2. Create the wallpaper links (see [Wallpapers](#wallpapers)).
-3. Copy configs (see [Apply Configs](#apply-configs)).
-4. Log out and back in, then verify:
-   - `hyprctl monitors` shows the right monitor and scale
-   - `hyprctl configerrors` prints nothing
-   - `echo $LIBVA_DRIVER_NAME` prints `nvidia` on NVIDIA machines, nothing otherwise
-
-## Syncing Changes Between Devices
+## Syncing Devices script
 
 Use the sync script:
 
@@ -300,9 +280,3 @@ How it works:
 - Don't run it with `sudo`.
 
 Because it mirrors, any config file that should exist on both machines must exist on both (e.g. `batteryOpts.lua` stays on the PC even though only the laptop loads it). Check the `-` lines in the preview before confirming.
-
-## Epilogue
-
-If you are using gamescope, this is the command to include within the steam properties tab, wit the first values tweaked to the Desktop Monitor resolution & refresh rate:
-
-`gamescope -W 1920 -H 1080 -r 180 --adaptive-sync --force-grab-cursor -f -- %command%`
