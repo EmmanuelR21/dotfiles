@@ -169,15 +169,6 @@ hl.device({
     sensitivity = -0.5,
 })
 
---------------------------------
----- WINDOWS AND WORKSPACES ----
---------------------------------
-
--- See https://wiki.hypr.land/Configuring/Basics/Window-Rules/
--- and https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
-
--- Example window rules that are useful
-
 local suppressMaximizeRule = hl.window_rule({
     -- Ignore maximize requests from all apps. You'll probably like this.
     name           = "suppress-maximize-events",
@@ -218,6 +209,22 @@ hl.layer_rule({
     match     = { namespace = "^notifications$" },
 
     animation = "slide right",
+})
+
+hl.workspace_rule({
+    workspace = "2",
+    layout = "scrolling",
+    layout_opts = {
+        direction = "down",
+    }
+})
+
+-- Workspace 2: every new tiled window takes a full screen-sized slot on the scrolling tape
+hl.window_rule({
+    name            = "ws2-full-slot",
+    match           = { workspace = "2", float = false },
+
+    scrolling_width = 1.0,
 })
 
 ------------------------
