@@ -38,6 +38,48 @@ window#waybar {
     border-radius: 5px;
 }
 
+/* spacing is 0 (so the right side can share one pill); the left pills keep
+   their 6px gaps through margins instead */
+#workspaces,
+#taskbar {
+    margin-left: 6px;
+}
+
+/* Right side: one shared pill. The modules sit inside it without their own
+   box; their hover backgrounds still highlight each one. */
+.modules-right {
+    background-color: #1e1e1e;
+    border-radius: 5px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+#custom-hyprsunset,
+#bluetooth,
+#network,
+#battery,
+#custom-power {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+/* Gaps between the modules inside the pill (not at its outer edges) */
+#custom-hyprsunset,
+#audio,
+#bluetooth,
+#network,
+#battery,
+#custom-power {
+    margin: 0 1px;
+}
+
+#custom-hyprsunset {
+    margin-left: 0;
+}
+
+#custom-power {
+    margin-right: 0;
+}
+
 #custom-bluelight {
     padding-top: 4px;
 }
@@ -83,9 +125,8 @@ window#waybar {
 /* Hyprsunset: glowing amber icon tile (same tile style as network) */
 #custom-hyprsunset {
     color: #fabd2f;
-    background-color: #1e1e1e;
     border-color: transparent;
-    padding: 2px 10px;
+    padding: 2px 8px;
     transition:
         background-color 250ms ease-out,
         color 250ms ease-out;
@@ -98,7 +139,7 @@ window#waybar {
 
 /* Speaker + mic share one box (group/audio in config) */
 #audio {
-    background-color: #1e1e1e;
+    background-color: transparent;
     /* Silver line under the whole pill, grows from the center on hover */
     background-image: linear-gradient(#d6dde9, #d6dde9);
     background-repeat: no-repeat;
@@ -138,9 +179,8 @@ window#waybar {
    Disconnected / Wi-Fi off dims to a muted brown-grey. */
 #network {
     color: #fe8019;
-    background-color: #1e1e1e;
     border-color: transparent;
-    padding: 2px 10px;
+    padding: 2px 8px;
     transition:
         background-color 250ms ease-out,
         color 250ms ease-out;
@@ -161,9 +201,8 @@ window#waybar {
    Off/blocked dims to a slate grey-blue. */
 #bluetooth {
     color: #3567d0;
-    background-color: #1e1e1e;
     border-color: transparent;
-    padding: 2px 10px;
+    padding: 2px 8px;
     transition:
         background-color 250ms ease-out,
         color 250ms ease-out;
@@ -183,15 +222,13 @@ window#waybar {
    are set to #e6e6e6 via markup in config.jsonc */
 #battery {
     color: #f0f0f0;
-    background-color: #1e1e1e;
 }
 
 /* Right side: slightly larger than the 14px default. Nerd Font icons render
    small at 14px, and the clock time is drawn at size='larger'. */
 #custom-hyprsunset,
 #bluetooth,
-#network,
-#custom-power {
+#network {
     font-size: 16px;
 }
 
@@ -200,10 +237,11 @@ window#waybar {
     font-size: 15px;
 }
 
+/* md-power glyph: drawn larger than the other icons at the same size */
 #custom-power {
     color: #fb4934;
-    background-color: #1e1e1e;
     border-color: transparent;
+    font-size: 14px;
 }
 
 /* Strip the GTK theme's button styling (gradients/borders/shadows on hover) */
@@ -303,4 +341,48 @@ window#waybar {
     background: transparent;
     border: none;
     box-shadow: none;
+}
+
+/* Right pill: underline that grows from the center on hover (same as the
+   audio module), in each module's own color */
+#custom-hyprsunset,
+#bluetooth,
+#network,
+#battery,
+#custom-power {
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: 0% 2px;
+    transition:
+        background-size 300ms cubic-bezier(0.4, 0, 0.2, 1),
+        background-color 250ms ease-out,
+        color 250ms ease-out;
+}
+
+#custom-hyprsunset {
+    background-image: linear-gradient(#fabd2f, #fabd2f);
+}
+
+#bluetooth {
+    background-image: linear-gradient(#3567d0, #3567d0);
+}
+
+#network {
+    background-image: linear-gradient(#fe8019, #fe8019);
+}
+
+#battery {
+    background-image: linear-gradient(#f0f0f0, #f0f0f0);
+}
+
+#custom-power {
+    background-image: linear-gradient(#fb4934, #fb4934);
+}
+
+#custom-hyprsunset:hover,
+#bluetooth:hover,
+#network:hover,
+#battery:hover,
+#custom-power:hover {
+    background-size: 55% 2px;
 }

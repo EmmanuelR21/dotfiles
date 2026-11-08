@@ -3,7 +3,7 @@
   "position": "top",
   "height": 31,
   "width": "auto",
-  "spacing": 6,
+  "spacing": 0,
   "margin": "6 6 0",
   "modules-left": ["custom/arch", "hyprland/workspaces", "wlr/taskbar"],
   "modules-center": ["clock"],
@@ -76,12 +76,12 @@
     "on-scroll-down": "",
   },
   "custom/power": {
-    "format": "⏻",
+    "format": "󰐥",
     "tooltip": false,
     "on-click": "$HOME/.config/waybar/scripts/power-popup.py",
   },
   "custom/hyprsunset": {
-    "format": "󰖛",
+    "format": "󰃟",
     "on-click": "$HOME/.config/waybar/scripts/hyprsunset-popup.py",
     "tooltip": false,
   },

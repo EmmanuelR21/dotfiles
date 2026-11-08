@@ -76,29 +76,32 @@ hl.config({
     },
 })
 
--- Two curves, shared everywhere:
---   snap   : fast start, long soft settle (easeOutExpo-ish) -> feels heavy, not floaty
---   weight : same feel with a tiny overshoot, so moving windows "land"
-hl.curve("snap", { type = "bezier", points = { { 0.22, 1 }, { 0.36, 1 } } })
+-- Three curves, shared everywhere:
+--   snap   : fast start, long soft settle (easeOutQuart-ish) -> feels heavy, not floaty
+--   weight : same feel with a tiny overshoot, only for windows popping in
+--   soft   : gentle ease-in-out for opacity, so fades don't pop
+hl.curve("snap", { type = "bezier", points = { { 0.25, 1 }, { 0.5, 1 } } })
 hl.curve("weight", { type = "bezier", points = { { 0.25, 0.9 }, { 0.2, 1.02 } } })
+hl.curve("soft", { type = "bezier", points = { { 0.4, 0 }, { 0.2, 1 } } })
 
--- speed is in deciseconds: 3.5 = 350ms. Things that appear take 3.5, things that leave take 2.5.
-hl.animation({ leaf = "global", enabled = true, speed = 3.5, bezier = "snap" })
-hl.animation({ leaf = "border", enabled = true, speed = 3.5, bezier = "snap" })
+-- speed is in deciseconds: 3.8 = 380ms. Things that appear take 3.8, things that leave take 2.8.
+hl.animation({ leaf = "global", enabled = true, speed = 3.8, bezier = "snap" })
+hl.animation({ leaf = "border", enabled = true, speed = 3.8, bezier = "snap" })
 
-hl.animation({ leaf = "windows", enabled = true, speed = 3.5, bezier = "weight" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 3.5, bezier = "weight", style = "popin 92%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 2.5, bezier = "snap", style = "popin 92%" })
+-- No overshoot on move/resize: app content can't keep up with a frame that grows past its final size
+hl.animation({ leaf = "windows", enabled = true, speed = 3.8, bezier = "snap" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 3.8, bezier = "weight", style = "popin 92%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2.8, bezier = "snap", style = "popin 92%" })
 
-hl.animation({ leaf = "fade", enabled = true, speed = 3.5, bezier = "snap" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 2.5, bezier = "snap" })
+hl.animation({ leaf = "fade", enabled = true, speed = 3.8, bezier = "soft" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 2.8, bezier = "soft" })
 
-hl.animation({ leaf = "layers", enabled = true, speed = 3.5, bezier = "snap", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 2.5, bezier = "snap", style = "fade" })
+hl.animation({ leaf = "layers", enabled = true, speed = 3.8, bezier = "snap", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 2.8, bezier = "snap", style = "fade" })
 
-hl.animation({ leaf = "workspaces", enabled = true, speed = 3.5, bezier = "snap", style = "slide" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 3.8, bezier = "snap", style = "slide" })
 
-hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3.5, bezier = "snap" })
+hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3.8, bezier = "snap" })
 
 -- See https://wiki.hypr.land/Configuring/Layouts/Dwindle-Layout/ for more
 hl.config({
