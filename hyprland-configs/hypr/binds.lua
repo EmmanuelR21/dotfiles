@@ -11,7 +11,10 @@ hl.bind("Print",
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("killall -SIGUSR1 waybar"))
 
 -- Example binds, see https://wiki.hypr.land/Configuring/Basics/Binds/ for more
-hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
+-- Default terminal from ~/.config/xdg-terminals.list (set in the Waybar Arch
+-- popup), read on each press; falls back to `terminal` if unset or broken
+local defaultTerminal = [[id=$(grep -m1 -E '^[^#-]' ~/.config/xdg-terminals.list 2>/dev/null | sed 's/^+//; s/:.*//'); [ -n "$id" ] && gtk-launch "$id" || ]] .. terminal
+hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(defaultTerminal))
 local closeWindowBind = hl.bind(mainMod .. " + X", hl.dsp.window.close())
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + M",

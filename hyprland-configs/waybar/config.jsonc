@@ -40,6 +40,11 @@
     "interval": 60,
     "tooltip": false,
     "on-click": "$HOME/.config/waybar/scripts/battery-popup.py",
+    // Adds the .warning / .critical classes used for the icon colors in style.css
+    "states": {
+      "warning": 30,
+      "critical": 15,
+    },
     "format": "<span color='#f0f0f0'>{capacity}%</span> {icon}",
     "format-icons": {
       "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],

@@ -45,39 +45,39 @@ window#waybar {
     margin-left: 6px;
 }
 
-/* Right side: one shared pill. The modules sit inside it without their own
-   box; their hover backgrounds still highlight each one. */
+/* Right side, two parts:
+   1. hyprsunset | audio | bluetooth | network share one pill. Waybar can't
+      box part of a section, so each module paints its own slice: no gaps
+      between them, and only the outer ends are rounded (in each module's
+      block below). Icons sit 18px apart: 9px padding per side, and audio's
+      4px + 5px (wireplumber) matches that at its edges.
+   2. battery and power float as their own pills, 6px apart (the same gap as
+      the left side). Battery hides on machines without one; power keeps
+      its own gap either way. */
 .modules-right {
-    background-color: #1e1e1e;
-    border-radius: 5px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-}
-
-#custom-hyprsunset,
-#bluetooth,
-#network,
-#battery,
-#custom-power {
     background-color: transparent;
     box-shadow: none;
 }
 
-/* Gaps between the modules inside the pill (not at its outer edges) */
 #custom-hyprsunset,
-#audio,
 #bluetooth,
 #network,
 #battery,
 #custom-power {
-    margin: 0 1px;
+    margin: 0;
+    background-color: #1e1e1e;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
-#custom-hyprsunset {
-    margin-left: 0;
+#bluetooth {
+    border-radius: 0;
 }
 
+#battery,
 #custom-power {
-    margin-right: 0;
+    margin-left: 6px;
+    border-radius: 5px;
+    padding: 2px 10px;
 }
 
 #custom-bluelight {
@@ -126,7 +126,8 @@ window#waybar {
 #custom-hyprsunset {
     color: #fabd2f;
     border-color: transparent;
-    padding: 2px 8px;
+    padding: 2px 9px;
+    border-radius: 5px 0 0 5px;
     transition:
         background-color 250ms ease-out,
         color 250ms ease-out;
@@ -139,22 +140,22 @@ window#waybar {
 
 /* Speaker + mic share one box (group/audio in config) */
 #audio {
-    background-color: transparent;
+    background-color: #1e1e1e;
     /* Silver line under the whole pill, grows from the center on hover */
     background-image: linear-gradient(#d6dde9, #d6dde9);
     background-repeat: no-repeat;
     background-position: center bottom;
     background-size: 0% 2px;
-    border-radius: 5px;
-    padding: 0 6px;
-    box-shadow: none;
+    border-radius: 0;
+    padding: 0 4px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
     transition:
         background-size 300ms cubic-bezier(0.4, 0, 0.2, 1),
         background-color 300ms ease-out;
 }
 
 #audio:hover {
-    background-color: #262626;
+    background-color: #2a2a2a;
     background-size: 55% 2px;
 }
 
@@ -180,7 +181,8 @@ window#waybar {
 #network {
     color: #fe8019;
     border-color: transparent;
-    padding: 2px 8px;
+    padding: 2px 9px;
+    border-radius: 0 5px 5px 0;
     transition:
         background-color 250ms ease-out,
         color 250ms ease-out;
@@ -202,7 +204,7 @@ window#waybar {
 #bluetooth {
     color: #3567d0;
     border-color: transparent;
-    padding: 2px 8px;
+    padding: 2px 9px;
     transition:
         background-color 250ms ease-out,
         color 250ms ease-out;
@@ -222,6 +224,21 @@ window#waybar {
    are set to #e6e6e6 via markup in config.jsonc */
 #battery {
     color: #f0f0f0;
+}
+
+/* Battery icon: yellow when low, red when critical, green whenever on
+   charge (that rule comes last so it wins over the low/critical ones). */
+#battery.warning {
+    color: #fabd2f;
+}
+
+#battery.critical {
+    color: #fb4934;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #22c55e;
 }
 
 /* Right side: slightly larger than the 14px default. Nerd Font icons render
@@ -255,25 +272,54 @@ window#waybar {
     text-shadow: none;
 }
 
-/* The "background" is a thin bar drawn with a gradient; animating its size
-   makes it grow out from the center under the number. White to match the
-   workspace number text. */
+/* Track: a faint 1px rail under the whole row of numbers, so the underline
+   reads as a marker riding along a number line. content-box keeps it to the
+   buttons' row, level with their underlines (it hides under the active one). */
+#workspaces {
+    background-image: linear-gradient(
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.1)
+    );
+    background-origin: content-box;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: 100% 1px;
+}
+
+/* The "background" is a thin bar drawn with a gradient. White to match the
+   workspace number text.
+   Sliding underline: a hidden bar waits at the edge facing the active
+   workspace (right edge for buttons before it, left edge for buttons after
+   it). On a switch, size and position animate together, so the old bar
+   shrinks off toward the new workspace and the new bar grows in from the
+   side it came from, which reads as the line sliding over.
+   Hand-off: the old bar leaves fast (120ms, Hyprland's "snap" curve), the
+   new one starts 80ms later and lands with a slight overshoot. 80 + 300ms
+   ends with Hyprland's 380ms workspace slide, so bar and screen arrive
+   together. */
 #workspaces button {
     background-color: transparent;
     background-image: linear-gradient(#ffffff, #ffffff);
     background-repeat: no-repeat;
-    background-position: center bottom;
+    background-position: right bottom;
     background-size: 0% 2px;
     min-width: 2px;
     border-radius: 3px;
     padding: 0 7px;
     opacity: 0.4;
     transition:
-        background-size 300ms cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 300ms ease-out;
+        background-size 120ms cubic-bezier(0.25, 1, 0.5, 1),
+        background-position 120ms cubic-bezier(0.25, 1, 0.5, 1),
+        opacity 200ms ease-out;
 }
 
-#workspaces button:hover {
+#workspaces button.active ~ button {
+    background-position: left bottom;
+}
+
+#workspaces button:hover,
+#workspaces button.active ~ button:hover {
+    background-position: center bottom;
     opacity: 0.75;
     background-color: transparent;
     background-image: linear-gradient(
@@ -281,13 +327,24 @@ window#waybar {
         rgba(255, 255, 255, 0.7)
     );
     background-size: 30% 2px;
+    transition:
+        background-size 250ms cubic-bezier(0.25, 1, 0.5, 1),
+        background-position 250ms cubic-bezier(0.25, 1, 0.5, 1),
+        opacity 250ms ease-out;
 }
 
-/* Active workspace: full brightness, bar grows out to most of the width */
+/* Active workspace: full brightness, bar grows out to most of the width.
+   The overshoot curve (y > 1) makes it stretch a little past 65% and past
+   center before settling, like it's landing with momentum. */
 #workspaces button.active {
     opacity: 1;
     background-image: linear-gradient(#ffffff, #ffffff);
+    background-position: center bottom;
     background-size: 65% 2px;
+    transition:
+        background-size 300ms cubic-bezier(0.3, 1.4, 0.6, 1) 80ms,
+        background-position 300ms cubic-bezier(0.3, 1.4, 0.6, 1) 80ms,
+        opacity 300ms ease-out 80ms;
 }
 
 /* A window on another workspace wants attention: blink a few times, then

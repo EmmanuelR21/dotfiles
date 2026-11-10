@@ -7,7 +7,11 @@ Click to open, click again to close (see popup_common.py).
 Hardware info is read once at open from /proc and /sys (GPU names from
 hwdata's pci.ids). Default apps go through Gio, which reads and writes
 ~/.config/mimeapps.list, the same file xdg-open, browsers and file managers
-use. Clicking a tile lists the installed apps that can open that type.
+use. Clicking a row lists the installed apps that can open that type. The
+terminal has no MIME type; it's kept in ~/.config/xdg-terminals.list.
+
+Update runs `sudo pacman -Syu && paru` in the default terminal (floating,
+centered). Install opens install-popup.py (repo package search).
 
 The Pacman / AUR tabs list explicitly installed repo (pacman -Qen) and
 foreign (pacman -Qem, i.e. AUR via paru) packages. Each list is loaded in the
@@ -22,21 +26,41 @@ import shutil
 import socket
 
 from gi.repository import Gio
-from popup_common import GLib, Gtk, Popup, label, run, set_class
+from popup_common import (
+    GLib,
+    Gtk,
+    Popup,
+    default_terminal,
+    label,
+    run,
+    run_in_terminal,
+    set_class,
+    set_default_terminal,
+    spawn_popup,
+    terminals,
+)
 
 ICON_ARCH = "\uf303"
 ICON_CPU = "\U000f0ee0"
 ICON_GPU = "\U000f08ae"
 ICON_RAM = "\U000f035b"
 ICON_DISK = "\U000f02ca"
-ICON_CHECK = "\U000f012c"
+ICON_UPDATE = "\U000f06b0"
+ICON_INSTALL = "\U000f01da"
+
+# Ctrl+C at the sudo/pacman prompt (or answering "n") cancels
+UPDATE_SCRIPT = (
+    "sudo pacman -Syu && paru; "
+    'printf "\\nPress Enter to close "; read -r _'
+)
 
 # (tab label, pacman flags, required helper or None)
 PACKAGE_TABS = [("Pacman", "-Qen", None), ("AUR", "-Qem", "paru")]
 
 # (label, icon, mime types). Candidates are listed for the first type; the
-# chosen app becomes the default for all of them.
+# chosen app becomes the default for all of them. None = default terminal.
 CATEGORIES = [
+    ("Terminal", "\U000f018d", None),
     (
         "Browser",
         "\U000f059f",
@@ -107,21 +131,26 @@ button {{
     transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }}
 
-/* Default-app tiles: category on top, current app below */
-button.tile {{ padding: 6px 8px; background-color: #262626; }}
-button.tile:hover {{ background-color: #2e2e2e; }}
-.tile .t-icon {{ font-size: 14px; color: #9a9fa8; }}
-.tile .t-name {{ font-size: 10px; color: #8a8f98; }}
-.tile .t-app  {{ font-size: 12px; font-weight: normal; color: #e6e6e6; }}
-button.tile.open {{ background-color: rgba(23, 147, 209, 0.12); border-color: rgba(23, 147, 209, 0.5); }}
-.tile.open .t-icon, .tile.open .t-name {{ color: {ACCENT}; }}
+/* Update / Install */
+button.action {{ padding: 4px 8px; background-color: #262626; }}
+button.action:hover {{ background-color: rgba(23, 147, 209, 0.15); }}
+.action .a-icon {{ font-size: 13px; color: {ACCENT}; }}
+.action .a-text {{ font-size: 11px; color: #cfcfcf; }}
 
-/* App list for the open tile */
-.choices {{ background-color: #232323; border-radius: 5px; padding: 4px; }}
-button.choice {{ padding: 4px 8px; background-color: transparent; }}
-button.choice:hover {{ background-color: #2e2e2e; }}
-.choice label {{ font-size: 12px; font-weight: normal; color: #cfcfcf; }}
-.choice.current label {{ color: {ACCENT}; font-weight: bold; }}
+/* Default apps: one quiet line each, icon | category ... current app */
+button.row {{ padding: 3px 6px; background-color: transparent; }}
+button.row:hover {{ background-color: #262626; }}
+.row .r-icon {{ font-size: 13px; color: #6f747d; min-width: 18px; }}
+.row .r-name {{ font-size: 11px; font-weight: normal; color: #8a8f98; }}
+.row .r-app  {{ font-size: 12px; font-weight: normal; color: #e6e6e6; }}
+button.row.open .r-icon, button.row.open .r-name {{ color: {ACCENT}; }}
+
+/* App list under the open row */
+.choices {{ margin: 2px 0 4px 24px; }}
+button.choice {{ padding: 2px 6px; background-color: transparent; }}
+button.choice:hover {{ background-color: #262626; }}
+.choice label {{ font-size: 11px; font-weight: normal; color: #9a9fa8; }}
+.choice.current label {{ color: {ACCENT}; }}
 .empty {{ font-size: 11px; font-weight: normal; color: #6f747d; padding: 4px 8px; }}
 """
 
@@ -247,36 +276,87 @@ def candidates(mime):
     return default, apps
 
 
-class Tile(Gtk.Button):
-    """One default-app category: icon + name on top, current app below."""
+class AppRow(Gtk.Box):
+    """One default-app category: a single line (icon, name, current app) with
+    the candidate list revealed underneath. Candidates are only looked up
+    when the row is opened."""
 
-    def __init__(self, name, icon, mimes):
-        super().__init__()
+    def __init__(self, name, icon, mimes, on_toggle):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.mimes = mimes
-        self.get_style_context().add_class("tile")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        top = Gtk.Box(spacing=6)
-        top.pack_start(label(icon, "t-icon"), False, False, 0)
-        top.pack_start(label(name.upper(), "t-name"), False, False, 0)
-        box.pack_start(top, False, False, 0)
-        self.app_lbl = label("", "t-app")
+        self.button = Gtk.Button()
+        self.button.get_style_context().add_class("row")
+        line = Gtk.Box(spacing=6)
+        line.pack_start(label(icon, "r-icon", xalign=0.5), False, False, 0)
+        line.pack_start(label(name, "r-name"), False, False, 0)
+        self.app_lbl = label("", "r-app", xalign=1)
         self.app_lbl.set_ellipsize(3)  # Pango.EllipsizeMode.END
-        self.app_lbl.set_max_width_chars(14)
-        box.pack_start(self.app_lbl, False, False, 0)
-        self.add(box)
+        self.app_lbl.set_max_width_chars(22)
+        line.pack_end(self.app_lbl, True, True, 0)
+        self.button.add(line)
+        self.button.connect("clicked", lambda *_: on_toggle(self))
+        self.pack_start(self.button, False, False, 0)
+
+        self.choices = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.choices.get_style_context().add_class("choices")
+        self.revealer = Gtk.Revealer(transition_duration=150)
+        self.revealer.add(self.choices)
+        self.pack_start(self.revealer, False, False, 0)
         self.refresh()
 
+    def current(self):
+        if self.mimes is None:
+            return default_terminal()
+        return Gio.AppInfo.get_default_for_type(self.mimes[0], False)
+
+    def apps(self):
+        if self.mimes is None:
+            return terminals()
+        return candidates(self.mimes[0])[1]
+
     def refresh(self):
-        self.default, self.apps = candidates(self.mimes[0])
-        name = self.default.get_name() if self.default else "Not set"
-        self.app_lbl.set_text(name)
-        self.set_tooltip_text(name)
+        app = self.current()
+        self.app_lbl.set_text(app.get_name() if app else "Not set")
 
     def choose(self, app):
-        for mime in self.mimes:
+        if self.mimes is None:
+            with contextlib.suppress(OSError):
+                set_default_terminal(app)
+        for mime in self.mimes or []:
             with contextlib.suppress(GLib.Error):  # keep going for the other types
                 app.set_as_default_for_type(mime)
         self.refresh()
+
+    def set_open(self, is_open, on_pick=None):
+        set_class(self.button, "open", is_open)
+        if is_open:
+            self.fill(on_pick)
+        self.revealer.set_reveal_child(is_open)
+
+    def fill(self, on_pick):
+        for child in self.choices.get_children():
+            child.destroy()
+        cur = self.current()
+        apps = self.apps()
+        if not apps:
+            self.choices.pack_start(
+                label("No installed apps for this", "empty"), False, False, 0
+            )
+        for app in apps:
+            box = Gtk.Box(spacing=6)
+            icon = app.get_icon()
+            if icon:
+                box.pack_start(
+                    Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU), False, False, 0
+                )
+            box.pack_start(label(app.get_name()), True, True, 0)
+            b = Gtk.Button()
+            b.add(box)
+            b.get_style_context().add_class("choice")
+            set_class(b, "current", bool(cur) and app.get_id() == cur.get_id())
+            b.connect("clicked", lambda _b, a=app: on_pick(self, a))
+            self.choices.pack_start(b, False, False, 0)
+        self.choices.show_all()
 
 
 class PackageList(Gtk.Box):
@@ -385,6 +465,21 @@ class SystemPopup(Popup):
             hw.pack_start(row, False, False, 0)
         self.panel.pack_start(hw, False, False, 0)
 
+        actions = Gtk.Box(spacing=6, homogeneous=True)
+        for icon, text, cb in (
+            (ICON_UPDATE, "Update", self.update),
+            (ICON_INSTALL, "Install", self.install),
+        ):
+            inner = Gtk.Box(spacing=6, halign=Gtk.Align.CENTER)
+            inner.pack_start(label(icon, "a-icon"), False, False, 0)
+            inner.pack_start(label(text, "a-text"), False, False, 0)
+            b = Gtk.Button()
+            b.add(inner)
+            b.get_style_context().add_class("action")
+            b.connect("clicked", lambda *_, f=cb: f())
+            actions.pack_start(b, True, True, 0)
+        self.panel.pack_start(actions, False, False, 0)
+
         self.panel.pack_start(Gtk.Separator(), False, False, 0)
 
         # Tabs: Default apps | Pacman | AUR
@@ -406,21 +501,10 @@ class SystemPopup(Popup):
         self.panel.pack_start(tab_row, False, False, 0)
         self.panel.pack_start(self.stack, False, False, 0)
 
-        # Default apps: 2-column tiles, the open one's app list underneath
-        apps = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        grid = Gtk.Grid(row_spacing=6, column_spacing=6)
-        grid.set_column_homogeneous(True)
-        for i, cat in enumerate(CATEGORIES):
-            tile = Tile(*cat)
-            tile.connect("clicked", self.toggle)
-            grid.attach(tile, i % 2, i // 2, 1, 1)
-        apps.pack_start(grid, False, False, 0)
-
-        self.choices = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
-        self.choices.get_style_context().add_class("choices")
-        self.revealer = Gtk.Revealer(transition_duration=150)
-        self.revealer.add(self.choices)
-        apps.pack_start(self.revealer, False, False, 0)
+        # Default apps: one line per category, the open one's list underneath
+        apps = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        for cat in CATEGORIES:
+            apps.pack_start(AppRow(*cat, self.toggle), False, False, 0)
         self.stack.add_named(apps, "Default apps")
 
         self.pkg_pages = {}
@@ -445,44 +529,24 @@ class SystemPopup(Popup):
         if page is self.pkg_pages.get(self.current):
             self.count.set_text(f"{page.total}" if page and page.total else "")
 
-    def toggle(self, tile):
+    def toggle(self, row):
         if self.open:
-            set_class(self.open, "open", False)
-        self.open = None if self.open is tile else tile
+            self.open.set_open(False)
+        self.open = None if self.open is row else row
         if self.open:
-            set_class(tile, "open", True)
-            self.fill_choices(tile)
-        self.revealer.set_reveal_child(self.open is not None)
+            row.set_open(True, self.pick)
 
-    def fill_choices(self, tile):
-        for child in self.choices.get_children():
-            child.destroy()
-        if not tile.apps:
-            self.choices.pack_start(
-                label("No installed apps for this", "empty"), False, False, 0
-            )
-        for app in tile.apps:
-            current = bool(tile.default) and app.get_id() == tile.default.get_id()
-            box = Gtk.Box(spacing=8)
-            icon = app.get_icon()
-            if icon:
-                box.pack_start(
-                    Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU), False, False, 0
-                )
-            box.pack_start(label(app.get_name()), True, True, 0)
-            if current:
-                box.pack_start(label(ICON_CHECK), False, False, 0)
-            b = Gtk.Button()
-            b.add(box)
-            b.get_style_context().add_class("choice")
-            set_class(b, "current", current)
-            b.connect("clicked", lambda _b, a=app: self.pick(tile, a))
-            self.choices.pack_start(b, False, False, 0)
-        self.choices.show_all()
+    def pick(self, row, app):
+        row.choose(app)
+        self.toggle(row)  # close the list; the row now shows the new app
 
-    def pick(self, tile, app):
-        tile.choose(app)
-        self.toggle(tile)  # close the list; the tile now shows the new app
+    def update(self):
+        if run_in_terminal(UPDATE_SCRIPT):
+            Gtk.main_quit()
+
+    def install(self):
+        spawn_popup("install-popup.py")
+        Gtk.main_quit()
 
 
 if __name__ == "__main__":
