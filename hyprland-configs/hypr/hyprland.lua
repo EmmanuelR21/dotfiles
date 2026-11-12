@@ -12,7 +12,8 @@ require("binds")
 ---- ENVIRONMENT VARIABLES ----
 -------------------------------
 
-hl.env("HYPRCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_THEME", "Future-Cyan-Hyprcursor_Theme")
+hl.env("HYPRCURSOR_SIZE", "30")
 
 -- NVIDIA (only applied when the NVIDIA driver is loaded) --
 if host.has_nvidia then
