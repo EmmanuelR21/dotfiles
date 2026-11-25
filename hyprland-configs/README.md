@@ -153,6 +153,30 @@ Enable power-profiles-daemon:
 sudo systemctl enable --now power-profiles-daemon
 ```
 
+## Lid Close Sleep
+
+**NOTE**: Laptops only. Desktops can skip it.
+
+Makes the laptop sleep when the lid is closed and wake when it's opened. Locking and idle sleep are already handled by `hypridle.conf`.
+
+Open the logind config as root:
+
+```bash
+sudo nvim /etc/systemd/logind.conf
+```
+
+Uncomment these two lines:
+
+```ini
+HandleLidSwitch=suspend
+HandleLidSwitchExternalPower=suspend
+```
+
+- `HandleLidSwitch`: sleep on lid close while on battery.
+- `HandleLidSwitchExternalPower`: sleep on lid close while plugged in too.
+
+Applies after the first reboot below.
+
 ## Bluetooth
 
 Needed for waybar's bluetooth module and its popup (`waybar/scripts/bluetooth-popup.py`).
