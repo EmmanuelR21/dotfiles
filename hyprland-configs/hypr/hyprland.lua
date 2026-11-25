@@ -1,8 +1,5 @@
 -- Refer to the wiki for more information.
 -- https://wiki.hypr.land/Configuring/Start/
--- You can (and should!!) split this configuration into multiple files
--- Create your files separately and then require them like this:
--- require("myColors")
 local host = require("host")
 require("monitors")
 require("autostart")
@@ -36,8 +33,8 @@ hl.config({
     },
 
     decoration = {
-        rounding         = 0,
-        rounding_power   = 1,
+        rounding         = 4,
+        rounding_power   = 4,
 
         -- Change transparency of focused and unfocused windows
         active_opacity   = 1.0,
